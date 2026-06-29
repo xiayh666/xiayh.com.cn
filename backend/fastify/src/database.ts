@@ -41,6 +41,13 @@ CREATE TABLE IF NOT EXISTS document_tags (
 
 CREATE INDEX IF NOT EXISTS documents_public_idx
   ON documents(status, published, visibility, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS site_metrics (
+  key TEXT PRIMARY KEY,
+  value INTEGER NOT NULL DEFAULT 0
+);
+
+INSERT OR IGNORE INTO site_metrics (key, value) VALUES ('visits', 0);
 `;
 
 export function openDatabase(path: string): DatabaseSync {

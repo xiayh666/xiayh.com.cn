@@ -16,8 +16,10 @@ import styles from "./AppLayout.module.css";
 
 const welcomeTab: EditorTabModel = { id: "welcome", kind: "welcome", label: "Welcome", href: "/", kept: true };
 type SidebarView = "explorer" | "search" | "outline";
+type IntroPhase = "intro" | "assembling" | "ready";
 
 export function AppLayout() {
+  const [introPhase, setIntroPhase] = useState<IntroPhase>("intro");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<SidebarView>("explorer");
   const [searchText, setSearchText] = useState("");
@@ -56,6 +58,32 @@ export function AppLayout() {
   }, [outlineNote.data]);
   const activeNote = notes.data?.items.find((note) => note.slug === currentSlug);
   const openEditorEntries = Object.values(editorGroups.workspace.groups).flatMap((group) => group.tabs.map((tab) => ({ group, tab })));
+
+  useEffect(() => {
+    if (introPhase !== "intro" || location.pathname === "/") return;
+    navigate("/", { replace: true });
+  }, [introPhase, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (introPhase !== "assembling") return;
+    const timer = window.setTimeout(() => {
+      setIntroPhase("ready");
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [introPhase]);
+
+  const enterWorkspace = () => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setIntroPhase("ready");
+      return;
+    }
+    setIntroPhase("assembling");
+  };
+
+  const openExplorer = () => {
+    setSidebarView("explorer");
+    if (introPhase !== "ready") enterWorkspace();
+  };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -114,7 +142,15 @@ export function AppLayout() {
 
   return (
     <EditorStatusContext.Provider value={setEditorStatus}>
-    <div className={styles.shell} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
+    <div
+      className={`${styles.shell}${introPhase === "intro" ? ` ${styles.shellIntro}` : introPhase === "assembling" ? ` ${styles.shellAssembling}` : ""}`}
+      style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
+    >
+      {introPhase !== "ready" ? (
+        <div className={`${styles.introOverlay}${introPhase === "assembling" ? ` ${styles.introOverlayAssembling}` : ""}`}>
+          <WelcomePage intro onBrowse={openExplorer} />
+        </div>
+      ) : null}
       <header className={styles.titlebar}>
         <div className={styles.titlebarStart}>
           <Command className={styles.brandIcon} />
@@ -271,14 +307,20 @@ export function AppLayout() {
             if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
             event.preventDefault();
             const workbenchWidth = event.currentTarget.parentElement?.getBoundingClientRect().width || window.innerWidth;
-            const maximum = Math.max(180, workbenchWidth - 48 - 1 - 240);
+            const maximum = Math.max(180, workbenchWidth - 48 - 240);
             setSidebarWidth((value) => Math.min(maximum, Math.max(180, value + (event.key === "ArrowRight" ? 10 : -10))));
           }}
         />
 
         <section className={styles.center}>
           <div className={styles.editorWorkspace}>
-            <EditorLayout node={editorGroups.workspace.layout} groups={editorGroups.workspace.groups} focusedGroupId={editorGroups.workspace.focusedGroupId} actions={editorGroups} />
+            <EditorLayout
+              node={editorGroups.workspace.layout}
+              groups={editorGroups.workspace.groups}
+              focusedGroupId={editorGroups.workspace.focusedGroupId}
+              actions={editorGroups}
+              onBrowse={openExplorer}
+            />
           </div>
         </section>
       </div>
@@ -309,21 +351,22 @@ export function AppLayout() {
 
 type EditorActions = ReturnType<typeof useEditorGroups>;
 
-function EditorLayout({ node, groups, focusedGroupId, actions }: {
+function EditorLayout({ node, groups, focusedGroupId, actions, onBrowse }: {
   node: EditorLayoutNode;
   groups: Record<string, EditorGroupModel>;
   focusedGroupId: string;
   actions: EditorActions;
+  onBrowse: () => void;
 }) {
   if (node.kind === "split") {
     return (
       <div className={`${styles.layoutSplit} ${node.orientation === "horizontal" ? styles.layoutHorizontal : styles.layoutVertical}`}>
         <div className={styles.layoutPane} style={{ flex: `0 0 ${node.ratio}%` }}>
-          <EditorLayout node={node.children[0]} groups={groups} focusedGroupId={focusedGroupId} actions={actions} />
+          <EditorLayout node={node.children[0]} groups={groups} focusedGroupId={focusedGroupId} actions={actions} onBrowse={onBrowse} />
         </div>
         <SplitResizeHandle orientation={node.orientation} ratio={node.ratio} onResize={(ratio) => actions.resize(node.id, ratio)} />
         <div className={styles.layoutPane}>
-          <EditorLayout node={node.children[1]} groups={groups} focusedGroupId={focusedGroupId} actions={actions} />
+          <EditorLayout node={node.children[1]} groups={groups} focusedGroupId={focusedGroupId} actions={actions} onBrowse={onBrowse} />
         </div>
       </div>
     );
@@ -348,7 +391,7 @@ function EditorLayout({ node, groups, focusedGroupId, actions }: {
         onMove={(tabId, direction) => actions.move(group.id, tabId, direction)}
       />
       <main className={styles.editorGroupContent}>
-        {activeTab ? <EditorTabContent tab={activeTab} reportStatus={focused} /> : <div className={styles.emptyEditor}>No open editors</div>}
+        {activeTab ? <EditorTabContent tab={activeTab} reportStatus={focused} onBrowse={onBrowse} /> : <div className={styles.emptyEditor}>No open editors</div>}
       </main>
     </section>
   );
@@ -401,7 +444,7 @@ function beginSidebarResize(event: ReactPointerEvent<HTMLDivElement>, width: num
   event.preventDefault();
   const startX = event.clientX;
   const workbenchWidth = event.currentTarget.parentElement?.getBoundingClientRect().width || window.innerWidth;
-  const maximum = Math.max(180, workbenchWidth - 48 - 1 - 240);
+  const maximum = Math.max(180, workbenchWidth - 48 - 240);
   beginPointerResize("col-resize", (pointerEvent) => {
     setWidth(Math.min(maximum, Math.max(180, width + pointerEvent.clientX - startX)));
   });
@@ -431,8 +474,12 @@ function beginPointerResize(cursor: string, onMove: (event: PointerEvent) => voi
   window.addEventListener("pointercancel", stop);
 }
 
-function EditorTabContent({ tab, reportStatus }: { tab: EditorTabModel; reportStatus: boolean }) {
-  if (tab.kind === "welcome") return <WelcomePage />;
+function EditorTabContent({ tab, reportStatus, onBrowse }: {
+  tab: EditorTabModel;
+  reportStatus: boolean;
+  onBrowse: () => void;
+}) {
+  if (tab.kind === "welcome") return <WelcomePage onBrowse={onBrowse} />;
   if (tab.kind === "login") return <AdminPage view="login" />;
   if (tab.kind === "settings") return <AdminPage view="settings" />;
   const slug = decodeURIComponent(tab.href.replace(/^\/notes\//, ""));

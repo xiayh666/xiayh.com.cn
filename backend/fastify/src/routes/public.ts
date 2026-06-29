@@ -22,6 +22,23 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
 
   app.get("/notes", async (request) => ({ items: listNotes(app.db, await isAdmin(request)) }));
 
+  app.get("/stats", async () => {
+    const content = app.db.prepare(`
+      SELECT COUNT(*) AS blogCount, COALESCE(SUM(view_count), 0) AS totalViews
+      FROM documents
+      WHERE status = 'active' AND published = 1 AND visibility = 'public'
+    `).get() as { blogCount: number; totalViews: number };
+    const visits = app.db.prepare("SELECT value FROM site_metrics WHERE key = 'visits'").get() as { value: number };
+    return { ...content, visits: visits.value };
+  });
+
+  app.post("/visits", async () => {
+    return app.db.prepare(`
+      UPDATE site_metrics SET value = value + 1 WHERE key = 'visits'
+      RETURNING value AS visits
+    `).get() as { visits: number };
+  });
+
   app.get<{ Params: { "*": string } }>("/notes/*", {
     schema: { params: { type: "object", required: ["*"], properties: { "*": { type: "string", minLength: 1 } } } },
   }, async (request, reply) => {

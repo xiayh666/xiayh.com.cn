@@ -26,6 +26,12 @@ export type Tag = {
   color: string;
 };
 
+export type SiteStats = {
+  blogCount: number;
+  totalViews: number;
+  visits: number;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     credentials: "include",
@@ -44,6 +50,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   session: () => request<{ authenticated: boolean; username: string | null }>("/api/session"),
   notes: () => request<{ items: NoteSummary[] }>("/api/notes"),
+  stats: () => request<SiteStats>("/api/stats"),
+  recordVisit: () => request<{ visits: number }>("/api/visits", { method: "POST", body: "{}" }),
   note: (slug: string, signal?: AbortSignal) => request<Note>(
     `/api/notes/${slug.split("/").map(encodeURIComponent).join("/")}`,
     { signal },

@@ -1,4 +1,17 @@
 .shell { display: grid; height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: 34px minmax(0, 1fr) 22px; }
+.introOverlay { position: fixed; z-index: 1200; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: hsl(var(--editor)); transition: top 900ms cubic-bezier(0.16, 1, 0.3, 1), right 900ms cubic-bezier(0.16, 1, 0.3, 1), bottom 900ms cubic-bezier(0.16, 1, 0.3, 1), left 900ms cubic-bezier(0.16, 1, 0.3, 1); }
+.introOverlayAssembling { top: calc(34px + 2.25rem); right: 0; bottom: 22px; left: calc(48px + var(--sidebar-width, 300px)); pointer-events: none; }
+.introOverlayAssembling button { opacity: 0; transition: opacity 160ms linear; }
+.titlebar, .statusbar, .activitybar, .sidebar, .sidebarResizeHandle, .center { transition: transform 800ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms ease; will-change: transform, opacity; }
+.shellIntro .titlebar { opacity: 0; transform: translateY(-110%); }
+.shellIntro .statusbar { opacity: 0; transform: translateY(110%); }
+.shellIntro .activitybar { opacity: 0; transform: translateX(-110%); }
+.shellIntro .sidebar { opacity: 0; transform: translateX(-105%); }
+.shellIntro .sidebarResizeHandle { opacity: 0; transform: translateX(calc(-1 * var(--sidebar-width, 300px))); }
+.shellIntro .sidebarResizeHandle, .shellAssembling .sidebarResizeHandle { z-index: 1301; }
+.shellIntro .center { opacity: 0; transform: translateX(14%); }
+.shellIntro .titlebar, .shellIntro .workbench, .shellIntro .statusbar,
+.shellAssembling .titlebar, .shellAssembling .workbench, .shellAssembling .statusbar { pointer-events: none; }
 .titlebar { display: flex; min-width: 0; align-items: center; border-bottom: 1px solid hsl(var(--line)); padding: 0 0.5rem; background: hsl(var(--titlebar)); color: hsl(var(--muted)); font-size: 0.75rem; }
 .titlebarStart, .titlebarCenter, .titlebarActions, .menu, .statusStart, .statusRight, .statusItem { display: flex; align-items: center; }
 .titlebarStart { min-width: 0; gap: 0.75rem; }
@@ -16,16 +29,16 @@
 .titlebarButton { display: grid; width: 1.5rem; height: 1.5rem; place-items: center; border-radius: 2px; }
 .titlebarButton:hover { background: hsl(var(--ink) / 0.1); }
 .titlebarButton svg { width: 0.875rem; height: 0.875rem; }
-.workbench { display: grid; min-height: 0; overflow: hidden; grid-template-columns: 48px var(--sidebar-width, 300px) 1px minmax(240px, 1fr); }
-.activitybar { display: flex; min-height: 0; flex-direction: column; align-items: center; border-right: 1px solid hsl(var(--line)); padding: 0.5rem 0; background: hsl(var(--activity)); }
+.workbench { display: grid; min-height: 0; overflow: hidden; grid-template-columns: 48px var(--sidebar-width, 300px) minmax(240px, 1fr); }
+.activitybar { display: flex; min-height: 0; grid-column: 1; grid-row: 1; flex-direction: column; align-items: center; border-right: 1px solid hsl(var(--line)); padding: 0.5rem 0; background: hsl(var(--activity)); }
 .action { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-left: 2px solid transparent; color: hsl(var(--muted)); transition: color 120ms, background 120ms; }
 .action:hover { color: hsl(var(--ink)); }
 .action svg { width: 1.5rem; height: 1.5rem; }
 .actionActive { border-left-color: hsl(var(--accent)); background: color-mix(in srgb, hsl(var(--ctp-mauve)) 9%, transparent); color: hsl(var(--ink)); }
 .activitySpacer { margin-top: auto; }
-.sidebar { display: flex; min-width: 180px; min-height: 0; flex-direction: column; overflow: hidden; background: hsl(var(--sidebar)); }
-.sidebarResizeHandle { position: relative; z-index: 4; width: 5px; min-height: 0; margin-left: -2px; cursor: col-resize; background: transparent; outline: 0; transition: background 100ms; touch-action: none; }
-.sidebarResizeHandle::before { position: absolute; top: 0; bottom: 0; left: 2px; width: 1px; background: hsl(var(--line)); content: ""; }
+.sidebar { display: flex; min-width: 180px; min-height: 0; grid-column: 2; grid-row: 1; flex-direction: column; overflow: hidden; background: hsl(var(--sidebar)); }
+.sidebarResizeHandle { position: relative; z-index: 4; width: 5px; min-height: 0; grid-column: 2; grid-row: 1; justify-self: end; margin-right: -2px; cursor: col-resize; background: transparent; outline: 0; transition: background 100ms; touch-action: none; }
+.sidebarResizeHandle::before { position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: hsl(var(--line)); content: ""; }
 .sidebarResizeHandle:hover, .sidebarResizeHandle:focus-visible, .sidebarResizeHandle:active { background: hsl(var(--accent)); }
 .sidebarResizeHandle:hover::before, .sidebarResizeHandle:focus-visible::before, .sidebarResizeHandle:active::before { background: transparent; }
 .paneHeader { display: flex; height: 2rem; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 0 0.75rem; color: hsl(var(--muted)); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -72,7 +85,7 @@
 .outlineRow:hover { background: hsl(var(--list-hover)); color: hsl(var(--ink)); }
 .outlineRow svg { width: 0.8rem; height: 0.8rem; flex: 0 0 auto; }
 .outlineRow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.center { display: flex; min-width: 240px; min-height: 0; flex-direction: column; overflow: hidden; background: hsl(var(--editor)); }
+.center { display: flex; min-width: 240px; min-height: 0; grid-column: 3; grid-row: 1; flex-direction: column; overflow: hidden; background: hsl(var(--editor)); }
 .editorTabs { display: flex; height: 2.25rem; min-height: 2.25rem; overflow-x: auto; overflow-y: hidden; background: hsl(var(--tab-bg)); scrollbar-color: transparent transparent; scrollbar-width: thin; }
 .editorTabs::-webkit-scrollbar { height: 3px; }
 .editorTabs::-webkit-scrollbar-track { background: transparent; }
@@ -128,5 +141,5 @@
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (min-width: 768px) { .menu, .addressButton { display: flex; } }
-@media (max-width: 960px) { .workbench { grid-template-columns: 48px var(--sidebar-width, 250px) 1px minmax(240px, 1fr); } }
+@media (max-width: 960px) { .workbench { grid-template-columns: 48px var(--sidebar-width, 250px) minmax(240px, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .collapsiblePanel, .blogPanel { transition: none; transform: none; } }

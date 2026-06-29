@@ -38,6 +38,17 @@ test("health endpoint reports readiness", async () => {
   assert.deepEqual(response.json(), { status: "ok" });
 });
 
+test("homepage stats count visits without inventing content data", async () => {
+  const initial = await app.inject({ method: "GET", url: "/api/stats" });
+  assert.deepEqual(initial.json(), { blogCount: 0, totalViews: 0, visits: 0 });
+
+  const visit = await app.inject({ method: "POST", url: "/api/visits", payload: {} });
+  assert.deepEqual(visit.json(), { visits: 1 });
+
+  const updated = await app.inject({ method: "GET", url: "/api/stats" });
+  assert.equal(updated.json().visits, 1);
+});
+
 test("session endpoint reports an anonymous visitor", async () => {
   const response = await app.inject({ method: "GET", url: "/api/session" });
   assert.equal(response.statusCode, 200);

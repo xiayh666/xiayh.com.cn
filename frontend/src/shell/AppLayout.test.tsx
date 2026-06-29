@@ -31,6 +31,7 @@ describe("AppLayout editor tabs", () => {
       const note: Note = { ...summary, html: `<h1>Article ${summary.title}</h1>` };
       return { ok: true, json: async () => note };
     }));
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
     render(
@@ -47,6 +48,8 @@ describe("AppLayout editor tabs", () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "进入工作区" })[0]);
 
     const explorerResizeHandle = screen.getByRole("separator", { name: "Resize Side Bar" });
     expect(explorerResizeHandle).toHaveAttribute("aria-valuenow", "300");
@@ -97,13 +100,13 @@ describe("AppLayout editor tabs", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close two.md" }));
     await screen.findByText("Document Metadata");
     fireEvent.click(screen.getByRole("button", { name: "Close Settings" }));
-    await waitFor(() => expect(screen.getByRole("heading", { name: "xiayh.com.cn" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "进入工作区" })).toBeInTheDocument());
 
     const tabBar = screen.getByLabelText("Editor tabs");
     fireEvent.contextMenu(within(tabBar).getByTitle("Welcome"));
     fireEvent.click(screen.getByRole("menuitem", { name: "Split Right" }));
     expect(screen.getAllByLabelText("Editor tabs")).toHaveLength(2);
-    expect(screen.getAllByRole("heading", { name: "xiayh.com.cn" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "进入工作区" })).toHaveLength(2);
     const groupResizeHandle = screen.getByRole("separator", { name: "Resize editor groups" });
     expect(groupResizeHandle).toHaveAttribute("aria-valuenow", "50");
     fireEvent.keyDown(groupResizeHandle, { key: "ArrowRight" });
