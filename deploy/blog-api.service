@@ -1,0 +1,22 @@
+[Unit]
+Description=CM311 Knowledge API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cm311-blog
+Group=cm311-blog
+WorkingDirectory=/opt/cm311-knowledge
+EnvironmentFile=/opt/cm311-knowledge/blog.env
+ExecStart=/usr/bin/node /opt/cm311-knowledge/backend/dist/src/server.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cm311-knowledge/data
+
+[Install]
+WantedBy=multi-user.target

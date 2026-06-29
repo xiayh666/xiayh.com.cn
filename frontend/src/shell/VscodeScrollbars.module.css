@@ -1,0 +1,9 @@
+.layer { position: fixed; inset: 0; z-index: 900; pointer-events: none; }
+.thumb { position: fixed; pointer-events: none; opacity: 0; background: var(--scrollbar-slider); transition: opacity 640ms linear, background-color 120ms linear; touch-action: none; }
+.visible { pointer-events: auto; opacity: 1; transition-duration: 120ms; }
+.thumb:hover { background: var(--scrollbar-slider-hover); }
+.thumb:active { background: var(--scrollbar-slider-active); }
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb { transition: none; }
+}

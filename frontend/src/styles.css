@@ -1,0 +1,217 @@
+:root {
+  --ctp-rosewater: 11 59% 67%;
+  --ctp-flamingo: 0 60% 67%;
+  --ctp-pink: 316 73% 69%;
+  --ctp-mauve: 266 85% 58%;
+  --ctp-red: 347 87% 44%;
+  --ctp-maroon: 355 76% 59%;
+  --ctp-peach: 22 99% 52%;
+  --ctp-yellow: 35 77% 49%;
+  --ctp-green: 109 58% 40%;
+  --ctp-teal: 183 74% 35%;
+  --ctp-sky: 197 97% 46%;
+  --ctp-sapphire: 189 70% 42%;
+  --ctp-blue: 220 91% 54%;
+  --ctp-lavender: 231 97% 72%;
+  --ctp-text: 234 16% 35%;
+  --ctp-subtext1: 233 13% 41%;
+  --ctp-subtext0: 233 10% 47%;
+  --ctp-overlay2: 232 10% 53%;
+  --ctp-overlay1: 231 10% 59%;
+  --ctp-overlay0: 228 11% 65%;
+  --ctp-surface2: 227 12% 71%;
+  --ctp-surface1: 225 14% 77%;
+  --ctp-surface0: 223 16% 83%;
+  --ctp-base: 220 23% 95%;
+  --ctp-mantle: 220 22% 92%;
+  --ctp-crust: 220 21% 89%;
+  --surface: var(--ctp-base);
+  --panel: var(--ctp-mantle);
+  --ink: var(--ctp-text);
+  --muted: var(--ctp-subtext0);
+  --line: var(--ctp-surface1);
+  --accent: var(--ctp-mauve);
+  --warm: var(--ctp-peach);
+  --titlebar: var(--ctp-crust);
+  --activity: var(--ctp-crust);
+  --sidebar: var(--ctp-mantle);
+  --editor: var(--ctp-base);
+  --terminal: var(--ctp-base);
+  --status: var(--ctp-crust);
+  --input-bg: var(--ctp-surface0);
+  --tab-bg: var(--ctp-crust);
+  --tab-inactive: var(--ctp-mantle);
+  --list-selection: var(--ctp-surface0);
+  --list-hover: 223 16% 83% / 0.5;
+  --panel-border: var(--ctp-surface2);
+  --scrollbar-slider: #64646466;
+  --scrollbar-slider-hover: #646464b3;
+  --scrollbar-slider-active: #00000099;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+
+:root.dark {
+  --surface: 220 13% 18%;
+  --panel: 220 13% 14%;
+  --ink: 210 20% 92%;
+  --muted: 215 9% 64%;
+  --line: 220 10% 24%;
+  --accent: 204 100% 40%;
+  --warm: 37 92% 55%;
+  --titlebar: 220 13% 12%;
+  --activity: 220 13% 16%;
+  --sidebar: 220 13% 15%;
+  --editor: 220 13% 18%;
+  --terminal: 220 13% 16%;
+  --status: 204 100% 32%;
+  --scrollbar-slider: #79797966;
+  --scrollbar-slider-hover: #646464b3;
+  --scrollbar-slider-active: #bfbfbf66;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
+}
+
+*:hover {
+  scrollbar-color: var(--scrollbar-slider) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  transition: background-color 800ms linear;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-slider);
+  transition-duration: 100ms;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-slider-hover);
+  transition-duration: 100ms;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-slider-active);
+  transition-duration: 100ms;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: auto !important;
+    scrollbar-width: auto !important;
+  }
+}
+
+* {
+  scrollbar-width: none !important;
+}
+
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *::-webkit-scrollbar-thumb {
+    transition: none;
+  }
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: hsl(var(--surface));
+  color: hsl(var(--ink));
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.prose-view {
+  color: hsl(var(--ink));
+  font-size: 0.96rem;
+  line-height: 1.8;
+}
+
+.prose-view h1,
+.prose-view h2,
+.prose-view h3 {
+  line-height: 1.2;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.prose-view h1 {
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+}
+
+.prose-view h2 {
+  font-size: 1.55rem;
+}
+
+.prose-view p {
+  margin: 0.75rem 0;
+}
+
+.prose-view .article-link {
+  display: inline;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: hsl(var(--accent));
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+.prose-view pre {
+  overflow: auto;
+  border: 1px solid hsl(var(--line));
+  border-radius: 8px;
+  padding: 1rem;
+  background: #101418;
+  color: #eef2f7;
+}

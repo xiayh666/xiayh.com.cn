@@ -1,0 +1,12 @@
+[Unit]
+Description=CM311 Knowledge repository sync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=cm311-blog
+Group=cm311-blog
+WorkingDirectory=/opt/cm311-knowledge
+EnvironmentFile=/opt/cm311-knowledge/blog.env
+ExecStart=/opt/cm311-knowledge/deploy/sync-notes.sh

@@ -1,0 +1,28 @@
+{
+    email admin@example.com
+}
+
+notes.example.com {
+    encode zstd gzip
+
+    root * /opt/cm311-knowledge/frontend
+    file_server
+
+    @api path /api/*
+    reverse_proxy @api 127.0.0.1:8080
+
+    @hidden {
+        path */.git/*
+        path *.excalidraw
+        path /data/*
+    }
+    respond @hidden 404
+
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        Permissions-Policy geolocation=(), microphone=(), camera=()
+    }
+
+    try_files {path} /index.html
+}

@@ -1,0 +1,19 @@
+.breadcrumbs { position: relative; display: flex; height: 2rem; flex: 0 0 auto; align-items: center; overflow: visible; padding: 0 0.5rem; background: hsl(var(--editor)); color: hsl(var(--muted)); font-size: 0.75rem; }
+.crumbGroup { display: flex; min-width: 0; align-items: center; }
+.crumb { display: flex; min-width: 0; align-items: center; gap: 0.25rem; border: 0; border-radius: 3px; padding: 0.2rem 0.3rem; background: transparent; color: inherit; cursor: pointer; }
+.crumb:hover { background: hsl(var(--ink) / 0.08); color: hsl(var(--ink)); }
+.crumb span { overflow: hidden; max-width: 15rem; text-overflow: ellipsis; white-space: nowrap; }
+.crumb svg, .separator { width: 0.875rem; height: 0.875rem; flex: 0 0 auto; }
+.separator { color: hsl(var(--muted) / 0.7); }
+.picker { position: absolute; z-index: 20; top: calc(100% + 1px); width: min(22rem, calc(100vw - 4rem)); max-height: 22rem; overflow: hidden; border: 1px solid hsl(var(--line)); border-radius: 4px; background: hsl(var(--panel)); color: hsl(var(--ink)); box-shadow: 0 8px 24px hsl(0 0% 0% / 0.24); }
+.pickerHeader { display: flex; height: 2rem; align-items: center; gap: 0.4rem; border-bottom: 1px solid hsl(var(--line)); padding: 0 0.5rem; color: hsl(var(--muted)); }
+.pickerHeader button { display: grid; width: 1.5rem; height: 1.5rem; place-items: center; border: 0; border-radius: 3px; background: transparent; color: inherit; cursor: pointer; }
+.pickerHeader button:hover { background: hsl(var(--ink) / 0.08); color: hsl(var(--ink)); }
+.pickerHeader svg { width: 0.9rem; height: 0.9rem; }
+.pickerList { max-height: 19.5rem; overflow: auto; padding: 0.25rem; }
+.pickerList button { display: flex; width: 100%; min-width: 0; align-items: center; gap: 0.5rem; border: 0; border-radius: 3px; padding: 0.4rem 0.5rem; background: transparent; color: hsl(var(--ink)); text-align: left; cursor: pointer; }
+.pickerList button:hover, .pickerList .selected { background: hsl(var(--list-selection)); }
+.pickerList button span { overflow: hidden; flex: 1; text-overflow: ellipsis; white-space: nowrap; }
+.pickerList button svg { width: 0.9rem; height: 0.9rem; flex: 0 0 auto; }
+.folderIcon { color: hsl(var(--ctp-yellow)); }
+.fileIcon { color: hsl(var(--accent)); }

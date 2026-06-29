@@ -1,0 +1,19 @@
+[server]
+host = "127.0.0.1"
+port = 8080
+request_body_limit = 1048576
+
+[paths]
+database = "./data/blog.sqlite3"
+notes_repo = "./data/notes"
+frontend_dist = "./frontend/dist"
+
+[admin]
+username = "admin"
+# Replace before deployment. This first scaffold compares plain text only.
+password = "change-me"
+cookie_name = "cm311_session"
+
+[sync]
+git_binary = "git"
+pull_enabled = true

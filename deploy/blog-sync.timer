@@ -1,0 +1,10 @@
+[Unit]
+Description=Run CM311 Knowledge sync periodically
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

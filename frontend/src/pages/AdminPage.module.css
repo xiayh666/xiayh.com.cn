@@ -1,0 +1,39 @@
+.page { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+.paneHeader svg { width: 0.875rem; height: 0.875rem; }
+.workspace { display: grid; min-height: 0; flex: 1; grid-template-columns: minmax(0, 1fr); }
+.workspaceSingle { grid-template-columns: minmax(240px, 360px); justify-content: center; }
+.sessionPane { min-height: 0; overflow: auto; }
+.paneHeader { display: flex; height: 2rem; flex: 0 0 auto; align-items: center; justify-content: space-between; border-bottom: 1px solid hsl(var(--line)); padding: 0 0.75rem; color: hsl(var(--muted)); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.formBody { padding: 0.75rem; }
+.field { display: block; color: hsl(var(--muted)); font-size: 0.75rem; }
+.field + .field { margin-top: 0.75rem; }
+.input, .select { height: 2rem; border: 1px solid transparent; border-radius: 2px; outline: none; background: hsl(var(--input-bg)); color: hsl(var(--ink)); transition: border-color 120ms; }
+.input { width: 100%; margin-top: 0.25rem; padding: 0 0.5rem; font-size: 0.875rem; }
+.input:focus, .select:focus { border-color: hsl(var(--accent)); }
+.button { display: inline-flex; width: 100%; height: 2rem; flex: 0 0 auto; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.75rem; border: 1px solid hsl(var(--line)); border-radius: 2px; outline: none; background: hsl(var(--panel)); color: hsl(var(--ink)); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: background 120ms; }
+.button:hover { background: hsl(var(--surface)); }
+.button:disabled { cursor: not-allowed; opacity: 0.5; }
+.button svg { width: 1rem; height: 1rem; }
+.primaryButton { margin-top: 1rem; border-color: hsl(var(--accent)); background: hsl(var(--accent)); color: white; }
+.primaryButton:hover { background: hsl(var(--accent)); }
+.syncResult { margin: 0.75rem 0 0; color: hsl(var(--muted)); font-size: 0.875rem; }
+.metadataPane { display: flex; min-height: 0; flex-direction: column; overflow: hidden; }
+.tableHeader, .noteRow { display: grid; grid-template-columns: minmax(180px, 1fr) 120px 110px 120px; gap: 0.75rem; }
+.tableHeader { flex: 0 0 auto; border-bottom: 1px solid hsl(var(--line)); padding: 0.5rem 0.75rem; color: hsl(var(--muted)); font-size: 0.6875rem; font-weight: 500; text-transform: uppercase; }
+.tableBody { min-height: 0; flex: 1; overflow: auto; }
+.noteRow { align-items: center; border-bottom: 1px solid hsl(var(--line)); padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+.noteRow:hover { background: hsl(var(--ink) / 0.05); }
+.noteIdentity { min-width: 0; }
+.noteTitle, .notePath { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.noteTitle { font-weight: 500; }
+.notePath { color: hsl(var(--muted)); font-size: 0.75rem; }
+.select { padding: 0 0.5rem; font-size: 0.75rem; }
+.checkbox { width: 1.25rem; height: 1.25rem; }
+.rowButton { width: auto; margin-top: 0; padding: 0 0.75rem; }
+
+@media (min-width: 1024px) {
+  .workspace { grid-template-columns: 320px minmax(0, 1fr); }
+  .sessionPane { border-right: 1px solid hsl(var(--line)); }
+  .workspaceSingle { grid-template-columns: minmax(240px, 360px); }
+  .workspaceSingle .sessionPane { border-right: 0; }
+}
