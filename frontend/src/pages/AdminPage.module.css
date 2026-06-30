@@ -1,39 +1,88 @@
-.page { display: flex; height: 100%; min-height: 0; flex-direction: column; }
-.paneHeader svg { width: 0.875rem; height: 0.875rem; }
-.workspace { display: grid; min-height: 0; flex: 1; grid-template-columns: minmax(0, 1fr); }
-.workspaceSingle { grid-template-columns: minmax(240px, 360px); justify-content: center; }
-.sessionPane { min-height: 0; overflow: auto; }
-.paneHeader { display: flex; height: 2rem; flex: 0 0 auto; align-items: center; justify-content: space-between; border-bottom: 1px solid hsl(var(--line)); padding: 0 0.75rem; color: hsl(var(--muted)); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.formBody { padding: 0.75rem; }
-.field { display: block; color: hsl(var(--muted)); font-size: 0.75rem; }
-.field + .field { margin-top: 0.75rem; }
-.input, .select { height: 2rem; border: 1px solid transparent; border-radius: 2px; outline: none; background: hsl(var(--input-bg)); color: hsl(var(--ink)); transition: border-color 120ms; }
-.input { width: 100%; margin-top: 0.25rem; padding: 0 0.5rem; font-size: 0.875rem; }
-.input:focus, .select:focus { border-color: hsl(var(--accent)); }
-.button { display: inline-flex; width: 100%; height: 2rem; flex: 0 0 auto; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.75rem; border: 1px solid hsl(var(--line)); border-radius: 2px; outline: none; background: hsl(var(--panel)); color: hsl(var(--ink)); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: background 120ms; }
-.button:hover { background: hsl(var(--surface)); }
-.button:disabled { cursor: not-allowed; opacity: 0.5; }
-.button svg { width: 1rem; height: 1rem; }
-.primaryButton { margin-top: 1rem; border-color: hsl(var(--accent)); background: hsl(var(--accent)); color: white; }
-.primaryButton:hover { background: hsl(var(--accent)); }
-.syncResult { margin: 0.75rem 0 0; color: hsl(var(--muted)); font-size: 0.875rem; }
-.metadataPane { display: flex; min-height: 0; flex-direction: column; overflow: hidden; }
-.tableHeader, .noteRow { display: grid; grid-template-columns: minmax(180px, 1fr) 120px 110px 120px; gap: 0.75rem; }
-.tableHeader { flex: 0 0 auto; border-bottom: 1px solid hsl(var(--line)); padding: 0.5rem 0.75rem; color: hsl(var(--muted)); font-size: 0.6875rem; font-weight: 500; text-transform: uppercase; }
-.tableBody { min-height: 0; flex: 1; overflow: auto; }
-.noteRow { align-items: center; border-bottom: 1px solid hsl(var(--line)); padding: 0.5rem 0.75rem; font-size: 0.875rem; }
-.noteRow:hover { background: hsl(var(--ink) / 0.05); }
-.noteIdentity { min-width: 0; }
-.noteTitle, .notePath { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.noteTitle { font-weight: 500; }
-.notePath { color: hsl(var(--muted)); font-size: 0.75rem; }
-.select { padding: 0 0.5rem; font-size: 0.75rem; }
-.checkbox { width: 1.25rem; height: 1.25rem; }
-.rowButton { width: auto; margin-top: 0; padding: 0 0.75rem; }
+.loadingState, .loginPage { display: grid; width: 100%; height: 100%; min-height: 0; place-items: center; background: hsl(var(--editor)); color: hsl(var(--muted)); }
+.loginPanel { width: min(28rem, calc(100% - 2rem)); border-top: 3px solid hsl(var(--accent)); background: hsl(var(--panel)); box-shadow: 12px 12px 0 hsl(var(--line) / 0.48); }
+.loginPanel > header, .profileView > header, .editorView > header, .manageView > header { display: flex; height: 2.35rem; align-items: center; justify-content: space-between; border-bottom: 1px solid hsl(var(--line)); padding: 0 0.8rem; font-family: "AudioLink Mono", monospace; font-size: 0.68rem; letter-spacing: 0.07em; }
+.loginPanel > header span { display: flex; align-items: center; gap: 0.45rem; font-weight: 800; }
+.loginPanel > header svg { width: 0.9rem; }
+.loginPanel > header small, .profileView > header small, .editorView > header small, .manageView > header small { color: hsl(var(--muted)); font-size: 0.58rem; }
+.loginIdentity { display: flex; align-items: center; gap: 0.8rem; padding: 1.15rem 1rem; }
+.loginIdentity > svg { width: 2.3rem; height: 2.3rem; border: 1px solid hsl(var(--line)); padding: 0.45rem; color: hsl(var(--accent)); }
+.loginIdentity div { display: flex; flex-direction: column; gap: 0.2rem; }
+.loginIdentity strong { font-size: 1rem; }
+.loginIdentity span { color: hsl(var(--muted)); font-size: 0.72rem; }
+.field { display: flex; flex-direction: column; gap: 0.3rem; margin: 0 1rem 0.8rem; color: hsl(var(--muted)); font-family: "AudioLink Mono", monospace; font-size: 0.62rem; letter-spacing: 0.06em; }
+.field input, .editorToolbar input, .editorToolbar select, .manageToolbar input, .noteRow select { height: 2rem; border: 1px solid hsl(var(--line)); border-radius: 2px; outline: 0; padding: 0 0.55rem; background: hsl(var(--input-bg)); color: hsl(var(--ink)); }
+.field input:focus, .editorToolbar input:focus, .editorToolbar select:focus, .manageToolbar input:focus, .noteRow select:focus { border-color: hsl(var(--accent)); }
+.primaryButton, .profileActions button, .manageToolbar button, .headerAction { display: inline-flex; height: 2rem; align-items: center; justify-content: center; gap: 0.4rem; border: 1px solid hsl(var(--line)); border-radius: 2px; padding: 0 0.75rem; background: hsl(var(--panel)); color: hsl(var(--ink)); cursor: pointer; }
+.primaryButton { margin: 0.25rem 1rem 1rem; border-color: hsl(var(--accent)); background: hsl(var(--accent)); color: white; }
+.primaryButton svg, .profileActions svg, .manageToolbar svg, .headerAction svg { width: 0.9rem; height: 0.9rem; }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+.errorMessage, .successMessage { margin: 0.65rem 1rem; font-size: 0.72rem; }
+.errorMessage { color: hsl(var(--ctp-red)); }
+.successMessage { color: hsl(var(--ctp-green)); }
+.spinning { animation: spin 850ms linear infinite; }
 
-@media (min-width: 1024px) {
-  .workspace { grid-template-columns: 320px minmax(0, 1fr); }
-  .sessionPane { border-right: 1px solid hsl(var(--line)); }
-  .workspaceSingle { grid-template-columns: minmax(240px, 360px); }
-  .workspaceSingle .sessionPane { border-right: 0; }
+.adminPage { display: flex; width: 100%; height: 100%; min-height: 0; flex-direction: column; overflow: hidden; background: hsl(var(--editor)); color: hsl(var(--ink)); }
+.adminHeader { display: grid; min-height: 3.25rem; flex: 0 0 auto; grid-template-columns: minmax(12rem, 1fr) auto minmax(8rem, 1fr); align-items: center; border-bottom: 1px solid hsl(var(--line)); background: hsl(var(--panel)); }
+.adminHeader > div { display: flex; align-items: center; gap: 0.65rem; padding-left: 0.75rem; }
+.ownerMark { display: grid; width: 2rem; height: 2rem; place-items: center; background: hsl(var(--ink)); color: hsl(var(--surface)); }
+.ownerMark svg { width: 1rem; }
+.adminHeader > div > span:last-child { display: flex; flex-direction: column; }
+.adminHeader small { color: hsl(var(--muted)); font-family: "AudioLink Mono", monospace; font-size: 0.55rem; letter-spacing: 0.08em; }
+.adminHeader strong { font-size: 0.82rem; }
+.adminHeader nav { display: flex; align-self: stretch; }
+.adminHeader nav button { min-width: 5.5rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: hsl(var(--muted)); font-size: 0.72rem; text-transform: uppercase; cursor: pointer; }
+.adminHeader nav button:hover, .adminHeader .activeNav { border-bottom-color: hsl(var(--accent)); color: hsl(var(--ink)); }
+.headerAction { justify-self: end; margin-right: 0.75rem; }
+
+.profileView, .editorView, .manageView { width: min(76rem, 100%); min-height: 0; margin: 0 auto; }
+.profileView { padding: 1rem; }
+.metricGrid { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid hsl(var(--line)); }
+.metricGrid div { display: flex; min-height: 7rem; flex-direction: column; justify-content: space-between; border-right: 1px solid hsl(var(--line)); padding: 1rem; }
+.metricGrid div:last-child { border-right: 0; }
+.metricGrid small { color: hsl(var(--muted)); font-family: "AudioLink Mono", monospace; font-size: 0.62rem; letter-spacing: 0.08em; }
+.metricGrid strong { font-size: clamp(1.8rem, 4vw, 3.2rem); }
+.profileActions { display: flex; gap: 0.55rem; padding-top: 1rem; }
+
+.editorView { display: flex; flex: 1; flex-direction: column; padding: 1rem; overflow: hidden; }
+.editorToolbar { display: grid; flex: 0 0 auto; grid-template-columns: minmax(12rem, 1fr) 8rem 7rem auto; align-items: end; gap: 0.55rem; border-bottom: 1px solid hsl(var(--line)); padding: 0.7rem 0; }
+.editorToolbar label { display: flex; flex-direction: column; gap: 0.25rem; color: hsl(var(--muted)); font-family: "AudioLink Mono", monospace; font-size: 0.58rem; }
+.editorToolbar .publishToggle { height: 2rem; flex-direction: row; align-items: center; }
+.publishToggle input { width: 1rem; height: 1rem; }
+.editorToolbar .primaryButton { margin: 0; }
+.editorView textarea { min-height: 0; flex: 1; resize: none; border: 0; outline: 0; padding: 1rem; background: hsl(var(--input-bg)); color: hsl(var(--ink)); font: 0.82rem/1.65 "AudioLink Mono", monospace; tab-size: 2; }
+
+.manageView { display: flex; flex: 1; flex-direction: column; padding: 1rem; overflow: hidden; }
+.manageToolbar { display: flex; flex: 0 0 auto; gap: 0.45rem; padding: 0.65rem 0; }
+.manageToolbar label { display: flex; min-width: 14rem; flex: 1; align-items: center; gap: 0.4rem; }
+.manageToolbar label svg { width: 0.9rem; color: hsl(var(--muted)); }
+.manageToolbar input { width: 100%; }
+.noteList { min-height: 0; overflow: auto; border-top: 1px solid hsl(var(--line)); }
+.noteRow { display: grid; min-width: 48rem; grid-template-columns: minmax(12rem, 1fr) 4rem 7rem 7rem 7rem; align-items: center; gap: 0.6rem; border-bottom: 1px solid hsl(var(--line)); padding: 0.55rem 0.65rem; }
+.noteRow:hover { background: hsl(var(--ink) / 0.04); }
+.noteIdentity { display: flex; min-width: 0; flex-direction: column; }
+.noteIdentity strong, .noteIdentity span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.noteIdentity strong { font-size: 0.78rem; }
+.noteIdentity span { color: hsl(var(--muted)); font-size: 0.66rem; }
+.viewCount, .rowPublished { display: flex; align-items: center; gap: 0.3rem; color: hsl(var(--muted)); font-size: 0.68rem; }
+.viewCount svg { width: 0.8rem; }
+.rowActions { display: flex; justify-content: flex-end; gap: 0.25rem; }
+.rowActions button { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border: 1px solid transparent; background: transparent; color: hsl(var(--muted)); cursor: pointer; }
+.rowActions button:hover { border-color: hsl(var(--line)); color: hsl(var(--ink)); }
+.rowActions svg { width: 0.88rem; }
+.rowActions .dangerButton:hover { color: hsl(var(--ctp-red)); }
+.emptyMessage { padding: 2rem; color: hsl(var(--muted)); text-align: center; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 760px) {
+  .adminHeader { grid-template-columns: 1fr auto; }
+  .adminHeader nav { grid-column: 1 / -1; grid-row: 2; order: 3; height: 2.5rem; }
+  .adminHeader nav button { flex: 1; min-width: 0; }
+  .headerAction { grid-column: 2; grid-row: 1; }
+  .metricGrid { grid-template-columns: 1fr 1fr; }
+  .metricGrid div:nth-child(2) { border-right: 0; }
+  .metricGrid div:nth-child(-n + 2) { border-bottom: 1px solid hsl(var(--line)); }
+  .editorToolbar { grid-template-columns: 1fr 1fr; }
+  .editorToolbar > label:first-child { grid-column: 1 / -1; }
+  .profileActions { flex-direction: column; }
 }
+@media (prefers-reduced-motion: reduce) { .spinning { animation: none; } }

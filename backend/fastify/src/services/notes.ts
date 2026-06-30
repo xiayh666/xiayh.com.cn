@@ -1,8 +1,9 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, extname, relative, resolve, sep } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { marked } from "marked";
+import { Marked } from "marked";
+import markedKatex from "marked-katex-extension";
 import sanitizeHtml from "sanitize-html";
 
 type DocumentRow = {
@@ -112,6 +113,46 @@ function metadata(content: string, filename: string): { title: string; summary: 
   return { title, summary };
 }
 
+export function renderMarkdown(content: string): string {
+  const mathFragments = new Map<string, string>();
+  const markerPrefix = `katex-${randomUUID()}`;
+  const katexExtension = markedKatex({
+    throwOnError: false,
+    trust: false,
+    strict: "ignore",
+    maxExpand: 1_000,
+    maxSize: 20,
+  });
+
+  for (const extension of katexExtension.extensions ?? []) {
+    if (!("renderer" in extension)) continue;
+    const renderKatex = extension.renderer;
+    extension.renderer = function renderMathPlaceholder(token) {
+      const id = `${markerPrefix}-${mathFragments.size}`;
+      const rendered = renderKatex.call(this, token);
+      if (typeof rendered !== "string") return rendered;
+      mathFragments.set(id, rendered);
+      return `<span data-katex-placeholder="${id}"></span>`;
+    };
+  }
+
+  const rendered = new Marked(katexExtension).parse(content, { async: false }) as string;
+  const sanitized = sanitizeHtml(rendered, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2"]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      img: ["src", "alt", "title"],
+      span: ["data-katex-placeholder"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+  });
+
+  return sanitized.replace(
+    /<span data-katex-placeholder="([^"]+)"><\/span>/g,
+    (placeholder, id: string) => mathFragments.get(id) ?? placeholder,
+  );
+}
+
 export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string; scanned: number; changed: number } {
   const root = resolve(notesRepo);
   const files = markdownFiles(root);
@@ -139,17 +180,12 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
       if (path.startsWith(`..${sep}`) || path === "..") continue;
       activePaths.add(path);
       const content = readFileSync(absolutePath, "utf8");
-      const hash = createHash("sha256").update(`filename-title-v1\0${content}`).digest("hex");
+      const hash = createHash("sha256").update(`filename-title-katex-v2\0${content}`).digest("hex");
       const old = previous.get(path) as { hash: string } | undefined;
       if (old?.hash === hash) continue;
       const filename = basename(path, extname(path));
       const { title, summary } = metadata(content, filename);
-      const rendered = marked.parse(content, { async: false }) as string;
-      const html = sanitizeHtml(rendered, {
-        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2"]),
-        allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ["src", "alt", "title"] },
-        allowedSchemes: ["http", "https", "mailto"],
-      });
+      const html = renderMarkdown(content);
       upsert.run(path, slugFor(path), title, summary, hash, html, statSync(absolutePath).mtime.toISOString());
       changed += 1;
     }

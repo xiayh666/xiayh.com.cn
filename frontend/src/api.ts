@@ -32,6 +32,16 @@ export type SiteStats = {
   visits: number;
 };
 
+export type AdminProfile = {
+  username: string;
+  total: number;
+  published: number;
+  drafts: number;
+  views: number;
+};
+
+export type NoteSource = { id: number; path: string; content: string };
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     credentials: "include",
@@ -42,7 +52,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!res.ok) {
-    throw new Error(`${res.status} ${res.statusText}`);
+    const body = typeof res.json === "function" ? await res.json().catch(() => undefined) as { message?: string } | undefined : undefined;
+    throw new Error(body?.message || `${res.status} ${res.statusText}`);
   }
   return res.json() as Promise<T>;
 }
@@ -67,6 +78,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ username, password }),
     }),
+  logout: () => request<{ ok: boolean }>("/api/admin/logout", { method: "POST", body: "{}" }),
+  adminProfile: () => request<AdminProfile>("/api/admin/profile"),
+  noteSource: (id: number) => request<NoteSource>(`/api/admin/notes/${id}/source`),
+  createNote: (input: { path: string; content: string; visibility: NoteSummary["visibility"]; published: boolean }) =>
+    request<{ ok: boolean; id: number }>("/api/admin/notes", { method: "POST", body: JSON.stringify(input) }),
+  updateNoteContent: (id: number, content: string) =>
+    request<{ ok: boolean }>(`/api/admin/notes/${id}/content`, { method: "POST", body: JSON.stringify({ content }) }),
+  deleteNote: (id: number) =>
+    request<{ ok: boolean }>(`/api/admin/notes/${id}/delete`, { method: "POST", body: "{}" }),
   sync: () =>
     request<{ status: string; scanned: number; changed: number }>("/api/admin/sync", {
       method: "POST",

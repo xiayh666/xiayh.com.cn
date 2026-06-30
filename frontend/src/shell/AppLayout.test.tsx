@@ -98,15 +98,15 @@ describe("AppLayout editor tabs", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close one.md" }));
     await screen.findByRole("heading", { name: "Article Two" });
     fireEvent.click(screen.getByRole("button", { name: "Close two.md" }));
-    await screen.findByText("Document Metadata");
+    await screen.findByText("Welcome back.");
     fireEvent.click(screen.getByRole("button", { name: "Close Settings" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "进入工作区" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("region", { name: "博客概览" })).toBeInTheDocument());
 
     const tabBar = screen.getByLabelText("Editor tabs");
     fireEvent.contextMenu(within(tabBar).getByTitle("Welcome"));
     fireEvent.click(screen.getByRole("menuitem", { name: "Split Right" }));
     expect(screen.getAllByLabelText("Editor tabs")).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "进入工作区" })).toHaveLength(2);
+    expect(screen.getAllByRole("region", { name: "博客概览" })).toHaveLength(2);
     const groupResizeHandle = screen.getByRole("separator", { name: "Resize editor groups" });
     expect(groupResizeHandle).toHaveAttribute("aria-valuenow", "50");
     fireEvent.keyDown(groupResizeHandle, { key: "ArrowRight" });

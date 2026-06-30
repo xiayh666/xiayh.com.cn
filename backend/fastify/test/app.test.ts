@@ -15,7 +15,7 @@ before(async () => {
   const root = mkdtempSync(join(tmpdir(), "cm311-api-"));
   const notesRepo = join(root, "notes");
   mkdirSync(notesRepo);
-  writeFileSync(join(notesRepo, "hello.md"), "# Hello\n\nA searchable note.");
+  writeFileSync(join(notesRepo, "hello.md"), "# Hello\n\nA searchable note with $E = mc^2$.\n\n$$\n\\int_0^1 x^2 \\, dx = \\frac{1}{3}\n$$");
   app = await buildApp({
     logger: false,
     config: {
@@ -80,6 +80,10 @@ test("login issues JWT cookie and sync keeps new notes private", async () => {
 
   const adminList = await app.inject({ method: "GET", url: "/api/notes", headers: { cookie } });
   assert.equal(adminList.json().items[0].title, "hello");
+
+  const mathNote = await app.inject({ method: "GET", url: "/api/notes/hello", headers: { cookie } });
+  assert.match(mathNote.json().html, /class="katex"/);
+  assert.match(mathNote.json().html, /class="katex-display"/);
 });
 
 test("admin can publish a note and public search can find it", async () => {
@@ -103,6 +107,42 @@ test("admin can publish a note and public search can find it", async () => {
   const note = await app.inject({ method: "GET", url: "/api/notes/hello" });
   assert.equal(note.json().viewCount, 1);
   assert.ok(note.json().publishedAt);
+});
+
+// 验证管理员可通过安全的 Markdown 源文件闭环完成创建、读取、编辑和删除。
+test("admin can manage repository-backed markdown sources", async () => {
+  const created = await app.inject({
+    method: "POST", url: "/api/admin/notes", headers: { cookie },
+    payload: { path: "admin/new-post.md", content: "# Draft\n\nCreated online.", visibility: "private", published: false },
+  });
+  assert.equal(created.statusCode, 201);
+  const id = created.json().id as number;
+
+  const profile = await app.inject({ method: "GET", url: "/api/admin/profile", headers: { cookie } });
+  assert.equal(profile.statusCode, 200);
+  assert.equal(profile.json().username, "admin");
+  assert.ok(profile.json().drafts >= 1);
+
+  const source = await app.inject({ method: "GET", url: `/api/admin/notes/${id}/source`, headers: { cookie } });
+  assert.equal(source.json().content, "# Draft\n\nCreated online.");
+
+  const updated = await app.inject({
+    method: "POST", url: `/api/admin/notes/${id}/content`, headers: { cookie }, payload: { content: "# Updated\n\nEdited online." },
+  });
+  assert.equal(updated.statusCode, 200);
+  const updatedSource = await app.inject({ method: "GET", url: `/api/admin/notes/${id}/source`, headers: { cookie } });
+  assert.match(updatedSource.json().content, /Edited online/);
+
+  const unsafe = await app.inject({
+    method: "POST", url: "/api/admin/notes", headers: { cookie },
+    payload: { path: "../escape.md", content: "bad", visibility: "private", published: false },
+  });
+  assert.equal(unsafe.statusCode, 400);
+
+  const deleted = await app.inject({ method: "POST", url: `/api/admin/notes/${id}/delete`, headers: { cookie }, payload: {} });
+  assert.equal(deleted.statusCode, 200);
+  const missing = await app.inject({ method: "GET", url: `/api/admin/notes/${id}/source`, headers: { cookie } });
+  assert.equal(missing.statusCode, 404);
 });
 
 test("cross-origin admin mutation is rejected", async () => {

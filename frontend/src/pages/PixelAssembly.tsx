@@ -5,11 +5,11 @@ type Point = { x: number; y: number; z: number; tx: number; ty: number; tz: numb
 const rotationSpeed = 0.00034;
 const rotationPeriod = Math.PI * 2 / rotationSpeed;
 
-export function PixelAssembly({ onShapeChange }: { onShapeChange?: (shape: number) => void } = {}) {
+export function PixelAssembly({ onShapeChange, active = true }: { onShapeChange?: (shape: number) => void; active?: boolean } = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (import.meta.env.MODE === "test") return;
+    if (!active || import.meta.env.MODE === "test") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext("2d");
@@ -148,7 +148,7 @@ export function PixelAssembly({ onShapeChange }: { onShapeChange?: (shape: numbe
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.cancelAnimationFrame(frame);
     };
-  }, [onShapeChange]);
+  }, [active, onShapeChange]);
 
   return <canvas ref={canvasRef} className={styles.pixelCanvas} aria-hidden="true" />;
 }

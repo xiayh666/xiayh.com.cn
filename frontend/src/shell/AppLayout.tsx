@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, ChevronDown, ChevronLeft, ChevronRight, Clock3, Command, FileText, Hash, ListTree, LogIn, Maximize2, Moon, MoreHorizontal, Search, Settings, ShieldCheck, SplitSquareHorizontal, Sun, UserRound } from "lucide-react";
-import { api } from "../api";
+import { api, type NoteSummary } from "../api";
 import { AdminPage } from "../pages/AdminPage";
 import { NotePage, scrollArticleHeading } from "../pages/NotePage";
 import { WelcomePage } from "../pages/WelcomePage";
@@ -10,6 +10,7 @@ import { CommandPalette } from "./CommandPalette";
 import { EditorTabs, type EditorTabModel } from "./EditorTabs";
 import { EditorStatusContext, type EditorStatus } from "./EditorStatusContext";
 import { ExplorerTree } from "./ExplorerTree";
+import { TopMenu, type TopMenuDefinition } from "./TopMenu";
 import { useEditorGroups, type EditorGroupModel, type EditorLayoutNode } from "./useEditorGroups";
 import { VscodeScrollbars } from "./VscodeScrollbars";
 import styles from "./AppLayout.module.css";
@@ -58,6 +59,8 @@ export function AppLayout() {
   }, [outlineNote.data]);
   const activeNote = notes.data?.items.find((note) => note.slug === currentSlug);
   const openEditorEntries = Object.values(editorGroups.workspace.groups).flatMap((group) => group.tabs.map((tab) => ({ group, tab })));
+  const focusedEditorGroup = editorGroups.workspace.groups[editorGroups.workspace.focusedGroupId];
+  const activeEditorTab = focusedEditorGroup?.tabs.find((tab) => tab.id === focusedEditorGroup.activeId);
 
   useEffect(() => {
     if (introPhase !== "intro" || location.pathname === "/") return;
@@ -90,11 +93,17 @@ export function AppLayout() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setPaletteOpen(true);
+      } else if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setSidebarView("search");
+      } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "w" && activeEditorTab) {
+        event.preventDefault();
+        editorGroups.close(editorGroups.workspace.focusedGroupId, activeEditorTab.id);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [activeEditorTab, editorGroups]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -140,6 +149,102 @@ export function AppLayout() {
     else if (currentSlug) setEditorStatus({ label: "Loading article…", language: "Markdown" });
   }, [currentSlug, location.pathname]);
 
+  const copyText = (value: string, label: string) => {
+    if (!navigator.clipboard) return;
+    void navigator.clipboard.writeText(value).then(() => setEditorStatus({ label }));
+  };
+
+  const selectEditorContent = () => {
+    const group = document.querySelector<HTMLElement>(`[data-editor-group="${CSS.escape(editorGroups.workspace.focusedGroupId)}"]`);
+    const content = group?.querySelector<HTMLElement>("main");
+    if (!content) return;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(content);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  };
+
+  const latestNote = notes.data?.items.reduce<NoteSummary | undefined>((latest, note) => {
+    if (!latest) return note;
+    return Date.parse(note.publishedAt || note.updatedAt) > Date.parse(latest.publishedAt || latest.updatedAt) ? note : latest;
+  }, undefined);
+
+  const menuDefinitions: TopMenuDefinition[] = [
+    {
+      label: "File",
+      items: [
+        { label: "Open Home", action: () => navigate("/") },
+        { label: "Open Blog Explorer", action: openExplorer },
+        { label: "Open Settings", action: () => navigate("/settings") },
+        { label: "Close Editor", shortcut: "Ctrl+W", separatorBefore: true, disabled: !activeEditorTab, action: () => activeEditorTab && editorGroups.close(editorGroups.workspace.focusedGroupId, activeEditorTab.id) },
+        { label: "Close All Editors", disabled: !focusedEditorGroup?.tabs.length, action: () => focusedEditorGroup && editorGroups.closeAll(focusedEditorGroup.id) },
+      ],
+    },
+    {
+      label: "Edit",
+      items: [
+        { label: "Search Articles", shortcut: "Ctrl+Shift+F", action: () => setSidebarView("search") },
+        { label: "Command Palette…", shortcut: "Ctrl+K", action: () => setPaletteOpen(true) },
+        { label: "Copy Current Path", separatorBefore: true, action: () => copyText(location.pathname, "Path copied") },
+        { label: dark ? "Use Light Theme" : "Use Dark Theme", action: () => setDark((value) => !value) },
+      ],
+    },
+    {
+      label: "Selection",
+      items: [
+        { label: "Select Editor Content", disabled: !activeEditorTab, action: selectEditorContent },
+        { label: "Clear Selection", action: () => window.getSelection()?.removeAllRanges() },
+        { label: "Focus Document Outline", separatorBefore: true, disabled: !currentSlug, action: () => setSidebarView("outline") },
+      ],
+    },
+    {
+      label: "View",
+      items: [
+        { label: "Explorer", checked: sidebarView === "explorer", action: () => setSidebarView("explorer") },
+        { label: "Search", checked: sidebarView === "search", action: () => setSidebarView("search") },
+        { label: "Outline", checked: sidebarView === "outline", action: () => setSidebarView("outline") },
+        { label: "Command Palette…", separatorBefore: true, action: () => setPaletteOpen(true) },
+        { label: "Toggle Color Theme", action: () => setDark((value) => !value) },
+      ],
+    },
+    {
+      label: "Go",
+      items: [
+        { label: "Back", shortcut: "Alt+Left", action: () => navigate(-1) },
+        { label: "Forward", shortcut: "Alt+Right", action: () => navigate(1) },
+        { label: "Home", separatorBefore: true, action: () => navigate("/") },
+        { label: "Latest Article", disabled: !latestNote, action: () => latestNote && navigate(`/notes/${latestNote.slug}`) },
+        { label: "Settings", action: () => navigate("/settings") },
+      ],
+    },
+    {
+      label: "Run",
+      items: [
+        { label: "Refresh Blog Data", action: () => { void notes.refetch(); } },
+        { label: "Refresh Document Outline", disabled: !currentSlug, action: () => { void outlineNote.refetch(); } },
+        { label: "Reader workspace has no build task", separatorBefore: true, disabled: true },
+      ],
+    },
+    {
+      label: "Terminal",
+      items: [
+        { label: "Copy Current Route", action: () => copyText(location.pathname, "Route copied") },
+        { label: "Copy Project Command", action: () => copyText("cd ~/xiayh.com.cn", "Project command copied") },
+        { label: "Integrated terminal unavailable in reader mode", separatorBefore: true, disabled: true },
+      ],
+    },
+    {
+      label: "Help",
+      items: [
+        { label: "Welcome", action: () => navigate("/") },
+        { label: "Search Articles", action: () => setPaletteOpen(true) },
+        { label: "Open Source Repository", separatorBefore: true, action: () => window.open("https://github.com/xiayh666", "_blank", "noopener,noreferrer") },
+        { label: "About Xiayh", disabled: true },
+      ],
+    },
+  ];
+
   return (
     <EditorStatusContext.Provider value={setEditorStatus}>
     <div
@@ -148,17 +253,13 @@ export function AppLayout() {
     >
       {introPhase !== "ready" ? (
         <div className={`${styles.introOverlay}${introPhase === "assembling" ? ` ${styles.introOverlayAssembling}` : ""}`}>
-          <WelcomePage intro onBrowse={openExplorer} />
+          <WelcomePage intro workspace={introPhase === "assembling"} onBrowse={openExplorer} />
         </div>
       ) : null}
       <header className={styles.titlebar}>
         <div className={styles.titlebarStart}>
           <Command className={styles.brandIcon} />
-          <nav className={styles.menu}>
-            {["File", "Edit", "Selection", "View", "Go", "Run", "Terminal", "Help"].map((item) => (
-              <button key={item} className={styles.menuButton}>{item}</button>
-            ))}
-          </nav>
+          <TopMenu menus={menuDefinitions} />
         </div>
         <div className={styles.titlebarCenter}>
           <ChevronLeft />
@@ -479,7 +580,7 @@ function EditorTabContent({ tab, reportStatus, onBrowse }: {
   reportStatus: boolean;
   onBrowse: () => void;
 }) {
-  if (tab.kind === "welcome") return <WelcomePage onBrowse={onBrowse} />;
+  if (tab.kind === "welcome") return <WelcomePage workspace onBrowse={onBrowse} />;
   if (tab.kind === "login") return <AdminPage view="login" />;
   if (tab.kind === "settings") return <AdminPage view="settings" />;
   const slug = decodeURIComponent(tab.href.replace(/^\/notes\//, ""));
