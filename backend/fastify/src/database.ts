@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS documents (
   pinned INTEGER NOT NULL DEFAULT 0 CHECK (pinned IN (0, 1)),
   status TEXT NOT NULL DEFAULT 'active',
   content_hash TEXT NOT NULL,
+  markdown TEXT NOT NULL DEFAULT '',
   html TEXT NOT NULL DEFAULT '',
   preview_path TEXT NOT NULL DEFAULT '',
   published_at TEXT,
@@ -59,5 +60,6 @@ export function openDatabase(path: string): DatabaseSync {
   );
   if (!columns.has("published_at")) db.exec("ALTER TABLE documents ADD COLUMN published_at TEXT");
   if (!columns.has("view_count")) db.exec("ALTER TABLE documents ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0");
+  if (!columns.has("markdown")) db.exec("ALTER TABLE documents ADD COLUMN markdown TEXT NOT NULL DEFAULT ''");
   return db;
 }

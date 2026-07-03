@@ -22,6 +22,7 @@ type DocumentRow = {
   publishedAt: string;
   viewCount: number;
   html?: string;
+  markdown?: string;
 };
 
 export type Note = Omit<DocumentRow, "published" | "pinned"> & {
@@ -57,7 +58,7 @@ export function listNotes(db: DatabaseSync, isAdmin: boolean): Note[] {
 
 export function findNote(db: DatabaseSync, slug: string, isAdmin: boolean): Note | undefined {
   const row = db.prepare(`
-    SELECT ${summaryColumns}, html
+    SELECT ${summaryColumns}, html, markdown
     FROM documents
     WHERE slug = ? AND ${visibilityClause(isAdmin)}
   `).get(slug) as unknown as DocumentRow | undefined;
@@ -159,15 +160,16 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
   const activePaths = new Set<string>();
   let changed = 0;
 
-  const previous = db.prepare("SELECT content_hash AS hash FROM documents WHERE path = ?");
+  const previous = db.prepare("SELECT content_hash AS hash, markdown FROM documents WHERE path = ?");
   const upsert = db.prepare(`
-    INSERT INTO documents (path, slug, title, summary, content_hash, html, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO documents (path, slug, title, summary, content_hash, markdown, html, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(path) DO UPDATE SET
       slug = excluded.slug,
       title = excluded.title,
       summary = excluded.summary,
       content_hash = excluded.content_hash,
+      markdown = excluded.markdown,
       html = excluded.html,
       updated_at = excluded.updated_at,
       status = 'active'
@@ -181,12 +183,12 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
       activePaths.add(path);
       const content = readFileSync(absolutePath, "utf8");
       const hash = createHash("sha256").update(`filename-title-katex-v2\0${content}`).digest("hex");
-      const old = previous.get(path) as { hash: string } | undefined;
-      if (old?.hash === hash) continue;
+      const old = previous.get(path) as { hash: string; markdown: string } | undefined;
+      if (old?.hash === hash && old.markdown === content) continue;
       const filename = basename(path, extname(path));
       const { title, summary } = metadata(content, filename);
       const html = renderMarkdown(content);
-      upsert.run(path, slugFor(path), title, summary, hash, html, statSync(absolutePath).mtime.toISOString());
+      upsert.run(path, slugFor(path), title, summary, hash, content, html, statSync(absolutePath).mtime.toISOString());
       changed += 1;
     }
 

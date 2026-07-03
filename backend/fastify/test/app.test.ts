@@ -10,10 +10,23 @@ import { buildApp } from "../src/app.js";
 let app: FastifyInstance;
 let cookie = "";
 
+function multipartFile(content: Buffer, filename: string, mime: string) {
+  const boundary = "----cm311-test-boundary";
+  return {
+    headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+    payload: Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="${filename}"\r\nContent-Type: ${mime}\r\n\r\n`),
+      content,
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]),
+  };
+}
+
 before(async () => {
   process.env.NODE_ENV = "test";
   const root = mkdtempSync(join(tmpdir(), "cm311-api-"));
   const notesRepo = join(root, "notes");
+  const mediaRoot = join(root, "media");
   mkdirSync(notesRepo);
   writeFileSync(join(notesRepo, "hello.md"), "# Hello\n\nA searchable note with $E = mc^2$.\n\n$$\n\\int_0^1 x^2 \\, dx = \\frac{1}{3}\n$$");
   app = await buildApp({
@@ -21,6 +34,8 @@ before(async () => {
     config: {
       databasePath: ":memory:",
       notesRepo,
+      mediaRoot,
+      imageUploadLimit: 16,
       adminUsername: "admin",
       adminPassword: "secret",
       syncToken: "test-sync-token-that-is-at-least-32-characters",
@@ -84,6 +99,7 @@ test("login issues JWT cookie and sync keeps new notes private", async () => {
   const mathNote = await app.inject({ method: "GET", url: "/api/notes/hello", headers: { cookie } });
   assert.match(mathNote.json().html, /class="katex"/);
   assert.match(mathNote.json().html, /class="katex-display"/);
+  assert.match(mathNote.json().markdown, /searchable note/);
 });
 
 test("admin can publish a note and public search can find it", async () => {
@@ -143,6 +159,38 @@ test("admin can manage repository-backed markdown sources", async () => {
   assert.equal(deleted.statusCode, 200);
   const missing = await app.inject({ method: "GET", url: `/api/admin/notes/${id}/source`, headers: { cookie } });
   assert.equal(missing.statusCode, 404);
+});
+
+// 验证编辑器图片只能由管理员上传，并可通过返回的稳定 URL 公开读取。
+test("admin can upload a supported editor image", async () => {
+  const image = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const multipart = multipartFile(image, "diagram.png", "image/png");
+  const anonymous = await app.inject({ method: "POST", url: "/api/admin/uploads/images", ...multipart });
+  assert.equal(anonymous.statusCode, 401);
+
+  const uploaded = await app.inject({ method: "POST", url: "/api/admin/uploads/images", headers: { ...multipart.headers, cookie }, payload: multipart.payload });
+  assert.equal(uploaded.statusCode, 201);
+  assert.match(uploaded.json().url, /^\/api\/media\/[a-z0-9-]+\.png$/);
+
+  const served = await app.inject({ method: "GET", url: uploaded.json().url });
+  assert.equal(served.statusCode, 200);
+  assert.deepEqual(served.rawPayload, image);
+  assert.match(served.headers["cache-control"] ?? "", /immutable/);
+});
+
+// 验证上传接口拒绝非图片类型和超过配置上限的文件。
+test("editor image upload rejects unsafe inputs", async () => {
+  const text = multipartFile(Buffer.from("not an image"), "payload.txt", "text/plain");
+  const unsupported = await app.inject({ method: "POST", url: "/api/admin/uploads/images", headers: { ...text.headers, cookie }, payload: text.payload });
+  assert.equal(unsupported.statusCode, 415);
+
+  const spoofed = multipartFile(Buffer.from("not really png"), "spoofed.png", "image/png");
+  const mismatched = await app.inject({ method: "POST", url: "/api/admin/uploads/images", headers: { ...spoofed.headers, cookie }, payload: spoofed.payload });
+  assert.equal(mismatched.statusCode, 415);
+
+  const large = multipartFile(Buffer.alloc(17, 1), "large.webp", "image/webp");
+  const oversized = await app.inject({ method: "POST", url: "/api/admin/uploads/images", headers: { ...large.headers, cookie }, payload: large.payload });
+  assert.equal(oversized.statusCode, 413);
 });
 
 test("cross-origin admin mutation is rejected", async () => {

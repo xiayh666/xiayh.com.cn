@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useSetEditorStatus } from "../shell/EditorStatusContext";
 import { ArticleBreadcrumbs, type ArticleHeading } from "./ArticleBreadcrumbs";
 import styles from "./NotePage.module.css";
+
+const MarkdownReader = lazy(() => import("./MarkdownReader").then((module) => ({ default: module.MarkdownReader })));
 
 export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: string; reportStatus?: boolean } = {}) {
   const params = useParams();
@@ -16,12 +18,12 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
   const [headings, setHeadings] = useState<ArticleHeading[]>([]);
   const [activeHeadingId, setActiveHeadingId] = useState("");
   const [viewCount, setViewCount] = useState<number>();
+  const [renderVersion, setRenderVersion] = useState(0);
   const articleRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const setEditorStatus = useSetEditorStatus();
 
   const note = noteQuery.data;
-  const articleHtml = useMemo(() => note ? replaceArticleAnchors(note.html) : "", [note]);
   const summary = notesQuery.data?.items.find((item) => item.slug === slug);
   const pendingPath = summary?.path ?? `${slug}.md`;
 
@@ -92,7 +94,7 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
       scroller.removeEventListener("scroll", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [note, reportStatus, setEditorStatus, viewCount]);
+  }, [note, renderVersion, reportStatus, setEditorStatus, viewCount]);
 
   const selectHeading = (id: string) => {
     if (articleRef.current) scrollArticleHeading(articleRef.current, id);
@@ -100,9 +102,10 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
   };
 
   const handleArticleNavigation = (event: MouseEvent<HTMLDivElement>) => {
-    const target = (event.target as Element).closest<HTMLButtonElement>("button[data-article-href]");
-    const href = target?.dataset.articleHref;
+    const target = (event.target as Element).closest<HTMLElement>("button[data-article-href], a[href]");
+    const href = target instanceof HTMLAnchorElement ? target.getAttribute("href") : target?.dataset.articleHref;
     if (!href) return;
+    event.preventDefault();
     if (href.startsWith("#")) {
       if (articleRef.current) scrollArticleHeading(articleRef.current, href.slice(1));
       return;
@@ -125,46 +128,31 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
       />
       <div ref={scrollerRef} className={styles.scroller} data-article-scroller>
         {note ? (
-          <div
-            key={note.slug}
-            ref={articleRef}
-            className={`prose-view ${styles.article} ${styles.articleEnter}`}
-            onClick={handleArticleNavigation}
-            dangerouslySetInnerHTML={{ __html: articleHtml }}
-          />
-        ) : (
-          <div className={styles.loadingDocument} role="status" aria-label="Loading article">
-            <span className={styles.loadingBar} />
-            <div className={styles.loadingFile}>
-              <FileText />
-              <span>{pendingPath.split("/").at(-1)}</span>
-            </div>
-            <div className={styles.skeletonTitle} />
-            <div className={styles.skeletonLine} />
-            <div className={styles.skeletonLine} />
-            <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
-            <div className={styles.skeletonBlock} />
-            <div className={styles.skeletonLine} />
-            <div className={`${styles.skeletonLine} ${styles.skeletonMedium}`} />
+          <Suspense fallback={<LoadingDocument pendingPath={pendingPath} />}>
+          <div key={note.slug} ref={articleRef} className={`${styles.article} ${styles.articleEnter}`} onClick={handleArticleNavigation}>
+              <MarkdownReader markdown={note.markdown} onReady={() => setRenderVersion((value) => value + 1)} />
           </div>
+          </Suspense>
+        ) : (
+          <LoadingDocument pendingPath={pendingPath} />
         )}
       </div>
     </article>
   );
 }
 
-function replaceArticleAnchors(html: string) {
-  const parsed = new DOMParser().parseFromString(html, "text/html");
-  for (const anchor of parsed.querySelectorAll<HTMLAnchorElement>("a[href]")) {
-    const button = parsed.createElement("button");
-    button.type = "button";
-    button.className = "article-link";
-    button.dataset.articleHref = anchor.getAttribute("href") ?? "";
-    button.innerHTML = anchor.innerHTML;
-    if (anchor.title) button.title = anchor.title;
-    anchor.replaceWith(button);
-  }
-  return parsed.body.innerHTML;
+function LoadingDocument({ pendingPath }: { pendingPath: string }) {
+  return <div className={styles.loadingDocument} role="status" aria-label="Loading article">
+    <span className={styles.loadingBar} />
+    <div className={styles.loadingFile}><FileText /><span>{pendingPath.split("/").at(-1)}</span></div>
+    <div className={styles.skeletonTitle} />
+    <div className={styles.skeletonLine} />
+    <div className={styles.skeletonLine} />
+    <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
+    <div className={styles.skeletonBlock} />
+    <div className={styles.skeletonLine} />
+    <div className={`${styles.skeletonLine} ${styles.skeletonMedium}`} />
+  </div>;
 }
 
 export function scrollArticleHeading(root: ParentNode, id: string) {

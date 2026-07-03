@@ -1,6 +1,6 @@
 import { slugify } from "../utils/slugify.js";
 import type { FastifyInstance } from "fastify";
-import { timingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, extname, resolve, sep } from "node:path";
 import { verifyPassword } from "../lib/password.js";
@@ -11,6 +11,21 @@ type VisibilityBody = { visibility: "private" | "unlisted" | "public"; published
 type TagsBody = { tags: string[] };
 type CreateNoteBody = VisibilityBody & { path: string; content: string };
 type UpdateContentBody = { content: string };
+
+const imageExtensions: Record<string, string> = {
+  "image/png": ".png",
+  "image/jpeg": ".jpg",
+  "image/webp": ".webp",
+  "image/gif": ".gif",
+};
+
+function hasImageSignature(content: Buffer, mime: string): boolean {
+  if (mime === "image/png") return content.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (mime === "image/jpeg") return content.length >= 3 && content[0] === 0xff && content[1] === 0xd8 && content[2] === 0xff;
+  if (mime === "image/gif") return ["GIF87a", "GIF89a"].includes(content.subarray(0, 6).toString("ascii"));
+  if (mime === "image/webp") return content.subarray(0, 4).toString("ascii") === "RIFF" && content.subarray(8, 12).toString("ascii") === "WEBP";
+  return false;
+}
 
 function markdownSourcePath(root: string, relativePath: string): string | undefined {
   const normalized = relativePath.trim().replaceAll("\\", "/");
@@ -77,6 +92,21 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       FROM documents WHERE status = 'active'
     `).get() as { total: number; published: number; drafts: number; views: number };
     return { username: request.user.sub, ...counts };
+  });
+
+  app.post("/uploads/images", { preHandler: app.authenticate }, async (request, reply) => {
+    const image = await request.file({ limits: { files: 1, fileSize: app.config.imageUploadLimit } });
+    if (!image) return reply.badRequest("An image file is required");
+    const extension = imageExtensions[image.mimetype];
+    if (!extension) return reply.unsupportedMediaType("Only PNG, JPEG, WebP, and GIF images are supported");
+    const content = await image.toBuffer();
+    if (image.file.truncated) return reply.payloadTooLarge(`Images must not exceed ${app.config.imageUploadLimit} bytes`);
+    if (!content.length) return reply.badRequest("The uploaded image is empty");
+    if (!hasImageSignature(content, image.mimetype)) return reply.unsupportedMediaType("The file content does not match its image type");
+    const filename = `${Date.now().toString(36)}-${randomUUID()}${extension}`;
+    mkdirSync(app.config.mediaRoot, { recursive: true });
+    writeFileSync(resolve(app.config.mediaRoot, filename), content, { flag: "wx" });
+    return reply.code(201).send({ ok: true, filename, url: `/api/media/${filename}` });
   });
 
   app.get<{ Params: { id: number } }>("/notes/:id/source", {

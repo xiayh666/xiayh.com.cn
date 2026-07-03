@@ -1,7 +1,14 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
+import type { NoteSummary } from "../api";
 import { WelcomePage } from "./WelcomePage";
+
+const recentNote: NoteSummary = {
+  id: 1, path: "math.md", slug: "math", title: "Math", summary: "", type: "markdown",
+  visibility: "public", published: true, pinned: false, status: "active",
+  updatedAt: "2026-06-30T00:00:00.000Z", publishedAt: "2026-06-30T00:00:00.000Z", viewCount: 0, previewPath: "",
+};
 
 describe("WelcomePage", () => {
   it("shows the blog archive in the workspace welcome page", () => {
@@ -21,4 +28,23 @@ describe("WelcomePage", () => {
     expect(container.querySelector('[data-welcome-mode="homepage"]')).toBeInTheDocument();
     expect(container.querySelector("[data-welcome-environment]")).toBeInTheDocument();
   });
+
+  it("hands a homepage recent update to the workspace transition", () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
+    const onOpenNote = vi.fn();
+    render(<MemoryRouter><WelcomePage intro initialNotes={[recentNote]} onOpenNote={onOpenNote} /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole("button", { name: /Math/ }));
+    expect(onOpenNote).toHaveBeenCalledWith("math");
+  });
+
+  it("uses the Model Display browse flow for the blog module", () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
+    const onBrowse = vi.fn();
+    render(<MemoryRouter><WelcomePage intro onBrowse={onBrowse} /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole("button", { name: /博客/ }));
+    expect(onBrowse).toHaveBeenCalledOnce();
+  });
+
 });

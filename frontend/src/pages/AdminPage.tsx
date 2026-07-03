@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Database, Edit3, Eye, FilePlus2, LogIn, LogOut, RefreshCw, Save, Search, Trash2, UserRound } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { lazy, Suspense, useState, type FormEvent } from "react";
 import { api, type NoteSummary } from "../api";
 import styles from "./AdminPage.module.css";
+
+const MarkdownEditor = lazy(() => import("./MarkdownEditor").then((module) => ({ default: module.MarkdownEditor })));
 
 type AdminView = "profile" | "publish" | "manage";
 type Draft = { id?: number; path: string; content: string; visibility: NoteSummary["visibility"]; published: boolean };
@@ -111,7 +113,14 @@ export function AdminPage({ view = "settings" }: { view?: "login" | "settings" }
             <label className={styles.publishToggle}><input type="checkbox" checked={draft.published} onChange={(event) => setDraft((value) => ({ ...value, published: event.target.checked }))} /><span>PUBLISHED</span></label>
             <button className={styles.primaryButton} disabled={saveDraftMutation.isPending || !draft.path.trim()}>{saveDraftMutation.isPending ? <RefreshCw className={styles.spinning} /> : <Save />} Save</button>
           </div>
-          <textarea aria-label="Markdown content" value={draft.content} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} placeholder="# Start writing…" spellCheck={false} />
+          <Suspense fallback={<div className={styles.editorLoading}>Loading Markdown editor…</div>}>
+            <MarkdownEditor
+              key={draft.id ?? "new"}
+              value={draft.content}
+              onChange={(content) => setDraft((value) => ({ ...value, content }))}
+              onUploadImage={async (file) => (await api.uploadImage(file)).url}
+            />
+          </Suspense>
           {saveDraftMutation.isSuccess ? <p className={styles.successMessage}>Article source and publication metadata saved.</p> : null}
           {saveDraftMutation.error ? <p className={styles.errorMessage} role="alert">{saveDraftMutation.error.message}</p> : null}
         </form>

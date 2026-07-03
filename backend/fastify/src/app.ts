@@ -4,7 +4,10 @@ import helmet from "@fastify/helmet";
 import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import sensible from "@fastify/sensible";
+import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import { mkdirSync } from "node:fs";
 import type { AppConfig } from "./config.js";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./database.js";
@@ -29,6 +32,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate("db", openDatabase(config.databasePath));
 
   await app.register(sensible);
+  await app.register(multipart, {
+    limits: { files: 1, fileSize: config.imageUploadLimit, fields: 0, parts: 1 },
+  });
   await app.register(cookie);
   await app.register(cors, {
     credentials: true,
@@ -50,6 +56,15 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     } catch {
       await reply.unauthorized("Authentication required");
     }
+  });
+
+  mkdirSync(config.mediaRoot, { recursive: true });
+  await app.register(fastifyStatic, {
+    root: config.mediaRoot,
+    prefix: "/api/media/",
+    decorateReply: false,
+    immutable: true,
+    maxAge: "1y",
   });
 
   app.addHook("onRequest", async (request, reply) => {

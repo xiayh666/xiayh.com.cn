@@ -17,6 +17,7 @@ export type NoteSummary = {
 
 export type Note = NoteSummary & {
   html: string;
+  markdown: string;
 };
 
 export type Tag = {
@@ -41,6 +42,17 @@ export type AdminProfile = {
 };
 
 export type NoteSource = { id: number; path: string; content: string };
+
+async function uploadImage(file: File): Promise<{ ok: boolean; url: string; filename: string }> {
+  const body = new FormData();
+  body.append("image", file);
+  const res = await fetch("/api/admin/uploads/images", { method: "POST", credentials: "include", body });
+  if (!res.ok) {
+    const payload = typeof res.json === "function" ? await res.json().catch(() => undefined) as { message?: string } | undefined : undefined;
+    throw new Error(payload?.message || `Image upload failed (${res.status})`);
+  }
+  return res.json() as Promise<{ ok: boolean; url: string; filename: string }>;
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -81,6 +93,7 @@ export const api = {
   logout: () => request<{ ok: boolean }>("/api/admin/logout", { method: "POST", body: "{}" }),
   adminProfile: () => request<AdminProfile>("/api/admin/profile"),
   noteSource: (id: number) => request<NoteSource>(`/api/admin/notes/${id}/source`),
+  uploadImage,
   createNote: (input: { path: string; content: string; visibility: NoteSummary["visibility"]; published: boolean }) =>
     request<{ ok: boolean; id: number }>("/api/admin/notes", { method: "POST", body: JSON.stringify(input) }),
   updateNoteContent: (id: number, content: string) =>

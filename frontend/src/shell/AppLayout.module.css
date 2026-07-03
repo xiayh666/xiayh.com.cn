@@ -1,7 +1,19 @@
 .shell { display: grid; height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: 34px minmax(0, 1fr) 22px; }
 .introOverlay { position: fixed; z-index: 1200; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: hsl(var(--editor)); transition: top 900ms cubic-bezier(0.16, 1, 0.3, 1), right 900ms cubic-bezier(0.16, 1, 0.3, 1), bottom 900ms cubic-bezier(0.16, 1, 0.3, 1), left 900ms cubic-bezier(0.16, 1, 0.3, 1); }
-.introOverlayAssembling { top: calc(34px + 2.25rem); right: 0; bottom: 22px; left: calc(48px + var(--sidebar-width, 300px)); pointer-events: none; animation: intro-overlay-release 1000ms linear both; }
-.introOverlayAssembling [data-intro-dismiss="true"] { opacity: 0; transition: opacity 160ms linear; }
+.introOverlayPositioning { pointer-events: none; }
+.introOverlayAssembling { top: var(--intro-target-top, calc(34px + 2.25rem)); right: var(--intro-target-right, 0); bottom: var(--intro-target-bottom, 22px); left: var(--intro-target-left, calc(48px + var(--sidebar-width, 300px))); pointer-events: none; }
+.introOverlayAssembling { animation: intro-overlay-release 1000ms linear both; }
+.introOverlayPositioning [data-intro-dismiss="true"], .introOverlayAssembling [data-intro-dismiss="true"] { opacity: 0; transition: opacity 160ms linear; }
+.introOverlay [data-welcome-card="true"] { backface-visibility: hidden; transform-style: preserve-3d; }
+.introOverlayArticleFlip { perspective: 1600px; }
+.introOverlayArticleFlip [data-welcome-mode="homepage"] [data-welcome-card="true"] { animation: homepage-card-front-flip 440ms cubic-bezier(0.45, 0, 0.2, 1) both; pointer-events: none; }
+.introArticleBack { position: fixed; z-index: 2; top: var(--intro-source-top); left: var(--intro-source-left); width: var(--intro-source-width); height: var(--intro-source-height); overflow: hidden; backface-visibility: hidden; background: hsl(var(--editor)); transform: rotateY(180deg); transform-style: preserve-3d; }
+.introOverlayArticleFlip .introArticleBack { animation: homepage-card-back-flip 440ms cubic-bezier(0.45, 0, 0.2, 1) both; }
+.introOverlayAssembling .introArticleBack { position: absolute; inset: 0; width: 100%; height: 100%; animation: none; transform: none; }
+.shellFastIntroExit .introOverlay { transition-duration: 360ms; }
+.shellFastIntroExit .introOverlayAssembling { transition: none; animation-duration: 420ms; }
+.shellFastIntroExit .titlebar, .shellFastIntroExit .statusbar, .shellFastIntroExit .activitybar, .shellFastIntroExit .sidebar, .shellFastIntroExit .sidebarResizeHandle, .shellFastIntroExit .center { transition-duration: 360ms, 240ms; }
+.shellFastIntroExit [data-welcome-mode="workspace"], .shellFastIntroExit [data-welcome-mode="workspace"] > div { transition-duration: 360ms; }
 .titlebar, .statusbar, .activitybar, .sidebar, .sidebarResizeHandle, .center { transition: transform 800ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms ease; will-change: transform, opacity; }
 .shellIntro .titlebar { opacity: 0; transform: translateY(-110%); }
 .shellIntro .statusbar { opacity: 0; transform: translateY(110%); }
@@ -16,6 +28,15 @@
 @keyframes intro-overlay-release {
   0%, 80% { opacity: 1; }
   100% { opacity: 0; }
+}
+@keyframes homepage-card-front-flip {
+  from { transform: rotateY(0deg); }
+  50% { transform: rotateY(-90deg); }
+  to { transform: translate(var(--intro-card-x), var(--intro-card-y)) scale(var(--intro-card-scale-x), var(--intro-card-scale-y)) rotateY(-180deg); }
+}
+@keyframes homepage-card-back-flip {
+  from { top: var(--intro-source-top); left: var(--intro-source-left); width: var(--intro-source-width); height: var(--intro-source-height); transform: rotateY(180deg); }
+  to { top: var(--intro-target-top); left: var(--intro-target-left); width: var(--intro-target-width); height: var(--intro-target-height); transform: rotateY(0deg); }
 }
 .titlebar { position: relative; z-index: 100; display: flex; min-width: 0; align-items: center; border-bottom: 1px solid hsl(var(--line)); padding: 0 0.5rem; background: hsl(var(--titlebar)); color: hsl(var(--muted)); font-size: 0.75rem; }
 .titlebarStart, .titlebarCenter, .titlebarActions, .menu, .statusStart, .statusRight, .statusItem { display: flex; align-items: center; }
@@ -145,6 +166,16 @@
 .splitResizeHandle:hover::before, .splitResizeHandle:focus-visible::before, .splitResizeHandle:active::before { background: transparent; }
 .editorGroup { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; background: hsl(var(--editor)); }
 .editorGroupContent { min-width: 0; min-height: 0; flex: 1; overflow: hidden; background: hsl(var(--editor)); isolation: isolate; }
+.editorFlipScene { width: 100%; height: 100%; min-width: 0; min-height: 0; perspective: 1600px; }
+.editorFlipCard { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; animation: editor-card-flip 440ms cubic-bezier(0.45, 0, 0.2, 1) both; }
+.editorFlipCardComplete { transform: rotateY(-180deg); animation: none; }
+.editorFlipFace { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; background: hsl(var(--editor)); }
+.editorFlipFront { transform: rotateY(0deg); }
+.editorFlipBack { transform: rotateY(180deg); }
+@keyframes editor-card-flip {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-180deg); }
+}
 .emptyEditor { display: grid; width: 100%; height: 100%; place-items: center; color: hsl(var(--muted)); font-size: 0.75rem; }
 .statusbar { display: flex; min-width: 0; align-items: center; justify-content: space-between; overflow: hidden; background: hsl(var(--status)); color: hsl(var(--ink)); font-size: 0.6875rem; }
 .statusStart, .statusRight { min-width: 0; height: 100%; }
@@ -157,4 +188,4 @@
 
 @media (min-width: 768px) { .menu, .addressButton { display: flex; } }
 @media (max-width: 960px) { .workbench { grid-template-columns: 48px var(--sidebar-width, 250px) minmax(240px, 1fr); } }
-@media (prefers-reduced-motion: reduce) { .collapsiblePanel, .blogPanel { transition: none; transform: none; } .introOverlayAssembling { animation: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .collapsiblePanel, .blogPanel { transition: none; transform: none; } .introOverlayAssembling { animation: none; opacity: 1; } .introOverlayArticleFlip [data-welcome-card="true"], .introOverlayArticleFlip .introArticleBack, .editorFlipCard { animation: none; transform: none; } }

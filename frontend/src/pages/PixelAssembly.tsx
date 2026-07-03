@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import styles from "./WelcomePage.module.css";
 
 type Point = { x: number; y: number; z: number; tx: number; ty: number; tz: number; color: string };
-const rotationSpeed = 0.00034;
+const rotationSpeed = 0.00051;
 const rotationPeriod = Math.PI * 2 / rotationSpeed;
 
 export function PixelAssembly({ onShapeChange, active = true }: { onShapeChange?: (shape: number) => void; active?: boolean } = {}) {

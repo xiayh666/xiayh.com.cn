@@ -22,13 +22,44 @@ const summaries: NoteSummary[] = [
 ];
 
 describe("AppLayout editor tabs", () => {
+  it("replaces the active Welcome tab when a homepage update opens", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (input: string) => {
+      if (input === "/api/notes") return { ok: true, json: async () => ({ items: summaries }) };
+      if (input === "/api/session") return { ok: true, json: async () => ({ authenticated: false, username: null }) };
+      if (input === "/api/stats") return { ok: true, json: async () => ({ blogCount: 2, totalViews: 12, visits: 1 }) };
+      const slug = input.split("/").at(-1);
+      const summary = summaries.find((note) => note.slug === slug)!;
+      return { ok: true, json: async () => ({ ...summary, html: `<h1>Article ${summary.title}</h1>`, markdown: `# Article ${summary.title}` }) };
+    }));
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={["/"]}>
+          <Routes>
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<WelcomePage />} />
+              <Route path="notes/*" element={<NotePage />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /One/ }));
+    await screen.findByRole("heading", { name: "Article One" });
+    expect(screen.getByRole("button", { name: "Close one.md" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Close Welcome" })).not.toBeInTheDocument();
+  });
+
   it("opens unique tabs, activates existing tabs, and selects a neighbor on close", async () => {
     vi.stubGlobal("fetch", vi.fn().mockImplementation(async (input: string) => {
       if (input === "/api/notes") return { ok: true, json: async () => ({ items: summaries }) };
       if (input === "/api/session") return { ok: true, json: async () => ({ authenticated: false, username: null }) };
       const slug = input.split("/").at(-1);
       const summary = summaries.find((note) => note.slug === slug)!;
-      const note: Note = { ...summary, html: `<h1>Article ${summary.title}</h1>` };
+      const note: Note = { ...summary, html: `<h1>Article ${summary.title}</h1>`, markdown: `# Article ${summary.title}` };
       return { ok: true, json: async () => note };
     }));
     vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));

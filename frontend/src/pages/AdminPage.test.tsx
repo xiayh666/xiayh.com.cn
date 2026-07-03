@@ -56,6 +56,7 @@ describe("AdminPage", () => {
     renderWithProviders(<AdminPage />);
     await userEvent.click(await screen.findByRole("button", { name: "publish" }));
     await userEvent.type(screen.getByPlaceholderText("section/article-name.md"), "cpp/new.md");
+    await userEvent.click(await screen.findByRole("button", { name: /Source/ }));
     await userEvent.type(screen.getByLabelText("Markdown content"), "# New article");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/admin/notes", expect.objectContaining({ method: "POST", body: JSON.stringify({ path: "cpp/new.md", content: "# New article", visibility: "private", published: false }) })));

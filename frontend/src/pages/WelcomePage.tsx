@@ -152,9 +152,11 @@ type WelcomePageProps = {
   intro?: boolean;
   workspace?: boolean;
   onBrowse?: () => void;
+  onOpenNote?: (slug: string) => void;
+  initialNotes?: NoteSummary[];
 };
 
-export function WelcomePage({ intro = false, workspace, onBrowse }: WelcomePageProps = {}) {
+export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, initialNotes = [] }: WelcomePageProps = {}) {
   const workspaceMode = workspace ?? !intro;
   const terminal = useTerminalTyping(intro && !workspaceMode);
   const clock = useClock();
@@ -162,7 +164,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse }: WelcomePageP
   const navigate = useNavigate();
   const leaveTimerRef = useRef<number>();
   const [activeModel, setActiveModel] = useState(0);
-  const [notes, setNotes] = useState<NoteSummary[]>([]);
+  const [notes, setNotes] = useState<NoteSummary[]>(initialNotes);
   const [stats, setStats] = useState<SiteStats>();
   const [updatesPulse, setUpdatesPulse] = useState(0);
   const [leaving, setLeaving] = useState(false);
@@ -173,14 +175,31 @@ export function WelcomePage({ intro = false, workspace, onBrowse }: WelcomePageP
 
   useEffect(() => () => window.clearTimeout(leaveTimerRef.current), []);
 
-  const beginBrowse = () => {
-    if (!onBrowse || leaving) return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      onBrowse();
+  useEffect(() => {
+    if (initialNotes.length) setNotes(initialNotes);
+  }, [initialNotes]);
+
+  const runAfterIntro = (action: () => void) => {
+    if (leaving) return;
+    if (!intro || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      action();
       return;
     }
     setLeaving(true);
-    leaveTimerRef.current = window.setTimeout(onBrowse, 620);
+    leaveTimerRef.current = window.setTimeout(action, 620);
+  };
+
+  const beginBrowse = () => {
+    if (onBrowse) runAfterIntro(onBrowse);
+  };
+
+  const openNote = (slug: string) => {
+    const action = () => {
+      if (onOpenNote) onOpenNote(slug);
+      else navigate(`/notes/${slug}`);
+    };
+    if (intro && onOpenNote) action();
+    else runAfterIntro(action);
   };
 
   useEffect(() => {
@@ -250,7 +269,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse }: WelcomePageP
         </section>
       </div> : null}
 
-      <div className={styles.quadrantFrame}>
+      <div className={styles.quadrantFrame} data-welcome-card="true">
         <div className={styles.topRule} aria-hidden="true" />
         <div className={styles.focusGuide} aria-hidden="true"><span /><i /></div>
 
@@ -317,7 +336,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse }: WelcomePageP
             <header><span>RECENT UPDATE.</span></header>
             <div>
               {recentNotes.map((note, index) => (
-                <button key={note.id} type="button" onClick={() => navigate(`/notes/${note.slug}`)}>
+                <button key={note.id} type="button" onClick={() => openNote(note.slug)}>
                   <i>{String(index + 1).padStart(2, "0")}</i><strong>{note.title}</strong><time>{formatUpdateDate(note.publishedAt || note.updatedAt)}</time>
                 </button>
               ))}
@@ -401,7 +420,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse }: WelcomePageP
               notes={notes}
               stats={stats}
               onOpenExplorer={onBrowse}
-              onOpenNote={(slug) => navigate(`/notes/${slug}`)}
+              onOpenNote={openNote}
             />
           )}
         </section>

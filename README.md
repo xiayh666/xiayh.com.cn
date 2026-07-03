@@ -105,6 +105,10 @@ curl -X POST http://127.0.0.1:8080/api/admin/sync \
 
 New Markdown files are indexed as `visibility = private` and `published = false`.
 
+Images uploaded from the owner editor are stored under `MEDIA_ROOT` and served from
+`/api/media/`. The default per-image limit is 5 MiB and can be changed with
+`IMAGE_UPLOAD_LIMIT`.
+
 ## Deployment Notes
 
 - Put packaged files under `/opt/cm311-knowledge`.

@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve, sep } from "node:path";
 import { findNote, listNotes, searchNotes } from "../services/notes.js";
 
 async function isAdmin(request: FastifyRequest): Promise<boolean> {
@@ -10,6 +12,13 @@ async function isAdmin(request: FastifyRequest): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function sourceMarkdown(root: string, path: string): string {
+  const base = resolve(root);
+  const target = resolve(base, path);
+  if (target !== base && !target.startsWith(`${base}${sep}`)) return "";
+  return existsSync(target) ? readFileSync(target, "utf8") : "";
 }
 
 export async function publicRoutes(app: FastifyInstance): Promise<void> {
@@ -44,7 +53,7 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
   }, async (request, reply) => {
     const note = findNote(app.db, request.params["*"], await isAdmin(request));
     if (!note) return reply.notFound("Note not found");
-    return note;
+    return { ...note, markdown: note.markdown || sourceMarkdown(app.config.notesRepo, note.path) };
   });
 
   app.post<{ Params: { "*": string } }>("/views/*", {

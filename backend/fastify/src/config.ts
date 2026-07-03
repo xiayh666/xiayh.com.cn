@@ -5,6 +5,8 @@ export type AppConfig = {
   port: number;
   databasePath: string;
   notesRepo: string;
+  mediaRoot: string;
+  imageUploadLimit: number;
   adminUsername: string;
   adminPassword: string;
   syncToken: string;
@@ -51,6 +53,8 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     port: integer("PORT", 8080),
     databasePath: resolve(process.env.DATABASE_PATH ?? "./data/blog.sqlite3"),
     notesRepo: resolve(process.env.NOTES_REPO ?? "./data/notes"),
+    mediaRoot: resolve(process.env.MEDIA_ROOT ?? "./data/media"),
+    imageUploadLimit: integer("IMAGE_UPLOAD_LIMIT", 5_242_880),
     adminUsername: process.env.ADMIN_USERNAME ?? "admin",
     adminPassword: process.env.ADMIN_PASSWORD ?? "",
     syncToken,

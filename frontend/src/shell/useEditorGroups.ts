@@ -112,7 +112,14 @@ export function useEditorGroups(initialTab: EditorTabModel, navigate: NavigateFu
     setWorkspace((current) => {
       const target = current.groups[targetId];
       if (!target) return current;
-      const tabs = target.tabs.some((item) => item.id === tab.id) ? target.tabs : [...target.tabs, tab];
+      const alreadyOpen = target.tabs.some((item) => item.id === tab.id);
+      const active = target.tabs.find((item) => item.id === target.activeId);
+      const replaceWelcome = !existing && !alreadyOpen && tab.kind === "article" && active?.kind === "welcome";
+      const tabs = alreadyOpen
+        ? target.tabs
+        : replaceWelcome
+          ? target.tabs.map((item) => item.id === active.id ? tab : item)
+          : [...target.tabs, tab];
       return { ...current, focusedGroupId: targetId, groups: { ...current.groups, [targetId]: { ...target, tabs, activeId: tab.id } } };
     });
   };

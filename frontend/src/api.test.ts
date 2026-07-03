@@ -46,4 +46,22 @@ describe("api client", () => {
 
     await expect(api.sync()).rejects.toThrow("401 Unauthorized");
   });
+
+  // 验证编辑器图片使用 multipart 上传，并把服务端 URL 返回给 Markdown 编辑器。
+  it("uploads an editor image as multipart form data", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, url: "/api/media/image.png", filename: "image.png" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const file = new File(["png"], "diagram.png", { type: "image/png" });
+
+    await expect(api.uploadImage(file)).resolves.toMatchObject({ url: "/api/media/image.png" });
+    expect(fetchMock).toHaveBeenCalledWith("/api/admin/uploads/images", expect.objectContaining({
+      method: "POST",
+      credentials: "include",
+      body: expect.any(FormData),
+    }));
+    expect(fetchMock.mock.calls[0][1]).not.toHaveProperty("headers");
+  });
 });

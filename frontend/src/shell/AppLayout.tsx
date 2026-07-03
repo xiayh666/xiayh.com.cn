@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, ChevronDown, ChevronLeft, ChevronRight, Clock3, Command, FileText, Hash, ListTree, LogIn, Maximize2, Moon, MoreHorizontal, Search, Settings, ShieldCheck, SplitSquareHorizontal, Sun, UserRound } from "lucide-react";
 import { api, type NoteSummary } from "../api";
@@ -17,10 +17,24 @@ import styles from "./AppLayout.module.css";
 
 const welcomeTab: EditorTabModel = { id: "welcome", kind: "welcome", label: "Welcome", href: "/", kept: true };
 type SidebarView = "explorer" | "search" | "outline";
-type IntroPhase = "intro" | "assembling" | "ready";
+type IntroPhase = "intro" | "positioning" | "assembling" | "ready";
+type LayoutRect = { top: number; right: number; bottom: number; left: number; width: number; height: number };
+type IntroTarget = LayoutRect & {
+  sourceTop: number;
+  sourceLeft: number;
+  sourceWidth: number;
+  sourceHeight: number;
+  deltaX: number;
+  deltaY: number;
+  scaleX: number;
+  scaleY: number;
+};
 
 export function AppLayout() {
   const [introPhase, setIntroPhase] = useState<IntroPhase>("intro");
+  const [fastIntroExit, setFastIntroExit] = useState(false);
+  const [introArticleSlug, setIntroArticleSlug] = useState("");
+  const [introTarget, setIntroTarget] = useState<IntroTarget>();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<SidebarView>("explorer");
   const [searchText, setSearchText] = useState("");
@@ -31,6 +45,7 @@ export function AppLayout() {
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [editorStatus, setEditorStatus] = useState<EditorStatus>({ label: "Ready" });
   const [now, setNow] = useState(() => new Date());
+  const pendingIntroRoute = useRef<string>();
   const notes = useQuery({ queryKey: ["notes"], queryFn: api.notes });
   const searchResults = useQuery({
     queryKey: ["search", searchText.trim()],
@@ -68,14 +83,28 @@ export function AppLayout() {
   }, [introPhase, location.pathname, navigate]);
 
   useEffect(() => {
-    if (introPhase !== "assembling") return;
-    const timer = window.setTimeout(() => {
-      setIntroPhase("ready");
-    }, 1000);
+    if (introPhase !== "positioning") return;
+    const timer = window.setTimeout(() => setIntroPhase("assembling"), 440);
     return () => window.clearTimeout(timer);
   }, [introPhase]);
 
-  const enterWorkspace = () => {
+  useEffect(() => {
+    if (introPhase !== "assembling") return;
+    const timer = window.setTimeout(() => {
+      setIntroPhase("ready");
+    }, fastIntroExit ? 420 : 1000);
+    return () => window.clearTimeout(timer);
+  }, [fastIntroExit, introPhase]);
+
+  useEffect(() => {
+    if (introPhase === "intro" || !pendingIntroRoute.current) return;
+    const route = pendingIntroRoute.current;
+    pendingIntroRoute.current = undefined;
+    navigate(route);
+  }, [introPhase, navigate]);
+
+  const enterWorkspace = (fast = false) => {
+    setFastIntroExit(fast);
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       setIntroPhase("ready");
       return;
@@ -85,7 +114,45 @@ export function AppLayout() {
 
   const openExplorer = () => {
     setSidebarView("explorer");
-    if (introPhase !== "ready") enterWorkspace();
+    if (introPhase !== "ready") enterWorkspace(false);
+  };
+
+  const beginHomepageCardTransition = () => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      enterWorkspace(true);
+      return;
+    }
+    const content = document.querySelector<HTMLElement>(`[data-editor-group="${CSS.escape(editorGroups.workspace.focusedGroupId)}"] > main`);
+    const card = document.querySelector<HTMLElement>("[data-welcome-card=\"true\"]");
+    if (content && card) {
+      const target = measureLayoutRect(content);
+      const source = card.getBoundingClientRect();
+      setIntroTarget({
+        ...target,
+        sourceTop: source.top,
+        sourceLeft: source.left,
+        sourceWidth: source.width,
+        sourceHeight: source.height,
+        deltaX: target.left + target.width / 2 - (source.left + source.width / 2),
+        deltaY: target.top + target.height / 2 - (source.top + source.height / 2),
+        scaleX: source.width > 0 ? target.width / source.width : 1,
+        scaleY: source.height > 0 ? target.height / source.height : 1,
+      });
+    }
+    setFastIntroExit(true);
+    setIntroPhase("positioning");
+  };
+
+  const openHomepageNote = (slug: string) => {
+    const route = `/notes/${slug}`;
+    setSidebarView("explorer");
+    if (introPhase === "ready") {
+      navigate(route);
+      return;
+    }
+    setIntroArticleSlug(slug);
+    pendingIntroRoute.current = route;
+    beginHomepageCardTransition();
   };
 
   useEffect(() => {
@@ -248,12 +315,35 @@ export function AppLayout() {
   return (
     <EditorStatusContext.Provider value={setEditorStatus}>
     <div
-      className={`${styles.shell}${introPhase === "intro" ? ` ${styles.shellIntro}` : introPhase === "assembling" ? ` ${styles.shellAssembling}` : ""}`}
+      className={`${styles.shell}${introPhase === "intro" || introPhase === "positioning" ? ` ${styles.shellIntro}` : introPhase === "assembling" ? ` ${styles.shellAssembling}` : ""}${fastIntroExit ? ` ${styles.shellFastIntroExit}` : ""}`}
       style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
     >
       {introPhase !== "ready" ? (
-        <div className={`${styles.introOverlay}${introPhase === "assembling" ? ` ${styles.introOverlayAssembling}` : ""}`}>
-          <WelcomePage intro workspace={introPhase === "assembling"} onBrowse={openExplorer} />
+        <div
+          className={`${styles.introOverlay}${introPhase === "positioning" ? ` ${styles.introOverlayPositioning}` : introPhase === "assembling" ? ` ${styles.introOverlayAssembling}` : ""}${introArticleSlug ? ` ${styles.introOverlayArticleFlip}` : ""}`}
+          style={introTarget ? {
+            "--intro-target-top": `${introTarget.top}px`,
+            "--intro-target-right": `${introTarget.right}px`,
+            "--intro-target-bottom": `${introTarget.bottom}px`,
+            "--intro-target-left": `${introTarget.left}px`,
+            "--intro-target-width": `${introTarget.width}px`,
+            "--intro-target-height": `${introTarget.height}px`,
+            "--intro-source-top": `${introTarget.sourceTop}px`,
+            "--intro-source-left": `${introTarget.sourceLeft}px`,
+            "--intro-source-width": `${introTarget.sourceWidth}px`,
+            "--intro-source-height": `${introTarget.sourceHeight}px`,
+            "--intro-card-x": `${introTarget.deltaX}px`,
+            "--intro-card-y": `${introTarget.deltaY}px`,
+            "--intro-card-scale-x": introTarget.scaleX,
+            "--intro-card-scale-y": introTarget.scaleY,
+          } as CSSProperties : undefined}
+        >
+          <WelcomePage intro workspace={introPhase === "assembling"} initialNotes={notes.data?.items ?? []} onBrowse={openExplorer} onOpenNote={openHomepageNote} />
+          {introArticleSlug ? (
+            <div className={styles.introArticleBack} data-editor-flip-face="back">
+              <NotePage slug={introArticleSlug} reportStatus={false} />
+            </div>
+          ) : null}
         </div>
       ) : null}
       <header className={styles.titlebar}>
@@ -492,7 +582,7 @@ function EditorLayout({ node, groups, focusedGroupId, actions, onBrowse }: {
         onMove={(tabId, direction) => actions.move(group.id, tabId, direction)}
       />
       <main className={styles.editorGroupContent}>
-        {activeTab ? <EditorTabContent tab={activeTab} reportStatus={focused} onBrowse={onBrowse} /> : <div className={styles.emptyEditor}>No open editors</div>}
+        {activeTab ? <EditorContentPlane tab={activeTab} reportStatus={focused} onBrowse={onBrowse} /> : <div className={styles.emptyEditor}>No open editors</div>}
       </main>
     </section>
   );
@@ -558,6 +648,27 @@ function clampSplitRatio(ratio: number, containerSize: number, minimumPaneSize: 
   return Math.min(100 - minimumRatio, Math.max(minimumRatio, ratio));
 }
 
+function measureLayoutRect(element: HTMLElement): LayoutRect {
+  let left = 0;
+  let top = 0;
+  let current: HTMLElement | null = element;
+  while (current) {
+    left += current.offsetLeft;
+    top += current.offsetTop;
+    current = current.offsetParent as HTMLElement | null;
+  }
+  const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+  const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
+  return {
+    top,
+    left,
+    right: Math.max(0, viewportWidth - left - element.offsetWidth),
+    bottom: Math.max(0, viewportHeight - top - element.offsetHeight),
+    width: element.offsetWidth,
+    height: element.offsetHeight,
+  };
+}
+
 function beginPointerResize(cursor: string, onMove: (event: PointerEvent) => void) {
   const previousCursor = document.body.style.cursor;
   const previousUserSelect = document.body.style.userSelect;
@@ -585,4 +696,45 @@ function EditorTabContent({ tab, reportStatus, onBrowse }: {
   if (tab.kind === "settings") return <AdminPage view="settings" />;
   const slug = decodeURIComponent(tab.href.replace(/^\/notes\//, ""));
   return <NotePage slug={slug} reportStatus={reportStatus} />;
+}
+
+function EditorContentPlane({ tab, reportStatus, onBrowse }: {
+  tab: EditorTabModel;
+  reportStatus: boolean;
+  onBrowse: () => void;
+}) {
+  const [displayedTab, setDisplayedTab] = useState(tab);
+  const [flip, setFlip] = useState<{ front: EditorTabModel; back: EditorTabModel; completed: boolean }>();
+
+  useEffect(() => {
+    if (tab.id === displayedTab.id) return;
+    const shouldFlip = displayedTab.kind === "welcome"
+      && tab.kind === "article"
+      && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!shouldFlip) {
+      setFlip(undefined);
+      setDisplayedTab(tab);
+      return;
+    }
+    setFlip({ front: displayedTab, back: tab, completed: false });
+    const timer = window.setTimeout(() => {
+      setDisplayedTab(tab);
+      setFlip((current) => current ? { ...current, completed: true } : current);
+    }, 440);
+    return () => window.clearTimeout(timer);
+  }, [displayedTab, tab]);
+
+  if (!flip) return <EditorTabContent tab={displayedTab} reportStatus={reportStatus} onBrowse={onBrowse} />;
+  return (
+    <div className={styles.editorFlipScene} aria-hidden={flip.completed ? undefined : true}>
+      <div className={`${styles.editorFlipCard}${flip.completed ? ` ${styles.editorFlipCardComplete}` : ""}`}>
+        {!flip.completed ? <div className={`${styles.editorFlipFace} ${styles.editorFlipFront}`}>
+          <EditorTabContent tab={flip.front} reportStatus={false} onBrowse={onBrowse} />
+        </div> : null}
+        <div className={`${styles.editorFlipFace} ${styles.editorFlipBack}`} data-editor-flip-face="back">
+          <EditorTabContent tab={flip.back} reportStatus={flip.completed && reportStatus} onBrowse={onBrowse} />
+        </div>
+      </div>
+    </div>
+  );
 }
