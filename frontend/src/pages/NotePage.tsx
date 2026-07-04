@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
-import { lazy, Suspense, useEffect, useRef, useState, type MouseEvent } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useSetEditorStatus } from "../shell/EditorStatusContext";
@@ -8,6 +8,28 @@ import { ArticleBreadcrumbs, type ArticleHeading } from "./ArticleBreadcrumbs";
 import styles from "./NotePage.module.css";
 
 const MarkdownReader = lazy(() => import("./MarkdownReader").then((module) => ({ default: module.MarkdownReader })));
+const articleScrollPositions = new Map<string, number>();
+const scrollPositionKey = (slug: string) => `article-scroll:${slug}`;
+
+function readArticleScrollPosition(slug: string) {
+  const memoryPosition = articleScrollPositions.get(slug);
+  if (memoryPosition !== undefined) return memoryPosition;
+  try {
+    const stored = Number(window.sessionStorage?.getItem(scrollPositionKey(slug)));
+    return Number.isFinite(stored) && stored > 0 ? stored : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeArticleScrollPosition(slug: string, position: number) {
+  articleScrollPositions.set(slug, position);
+  try {
+    window.sessionStorage?.setItem(scrollPositionKey(slug), String(position));
+  } catch {
+    // In-memory restoration remains available when session storage is blocked.
+  }
+}
 
 export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: string; reportStatus?: boolean } = {}) {
   const params = useParams();
@@ -21,11 +43,23 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
   const [renderVersion, setRenderVersion] = useState(0);
   const articleRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const currentSlugRef = useRef(slug);
+  const suppressScrollSaveRef = useRef(true);
   const setEditorStatus = useSetEditorStatus();
 
   const note = noteQuery.data;
   const summary = notesQuery.data?.items.find((item) => item.slug === slug);
   const pendingPath = summary?.path ?? `${slug}.md`;
+
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const previousSlug = currentSlugRef.current;
+    if (previousSlug && previousSlug !== slug && scroller.scrollTop > 0) writeArticleScrollPosition(previousSlug, scroller.scrollTop);
+    currentSlugRef.current = slug;
+    suppressScrollSaveRef.current = true;
+    scroller.scrollTop = 0;
+  }, [slug]);
 
   useEffect(() => {
     if (!note) return;
@@ -101,6 +135,28 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
     setActiveHeadingId(id);
   };
 
+  const handleReaderReady = (readySlug: string) => {
+    setRenderVersion((value) => value + 1);
+    const target = readArticleScrollPosition(readySlug);
+    if (target <= 0) {
+      suppressScrollSaveRef.current = false;
+      return;
+    }
+    let attempts = 0;
+    const restore = () => {
+      const scroller = scrollerRef.current;
+      if (currentSlugRef.current !== readySlug || !scroller) return;
+      scroller.scrollTop = target;
+      attempts += 1;
+      if (Math.abs(scroller.scrollTop - target) > 1 && attempts < 60) {
+        requestAnimationFrame(restore);
+      } else {
+        requestAnimationFrame(() => { suppressScrollSaveRef.current = false; });
+      }
+    };
+    requestAnimationFrame(restore);
+  };
+
   const handleArticleNavigation = (event: MouseEvent<HTMLDivElement>) => {
     const target = (event.target as Element).closest<HTMLElement>("button[data-article-href], a[href]");
     const href = target instanceof HTMLAnchorElement ? target.getAttribute("href") : target?.dataset.articleHref;
@@ -126,11 +182,18 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
         activeHeadingId={activeHeadingId}
         onSelectHeading={selectHeading}
       />
-      <div ref={scrollerRef} className={styles.scroller} data-article-scroller>
+      <div
+        ref={scrollerRef}
+        className={styles.scroller}
+        data-article-scroller
+        onScroll={(event) => {
+          if (!suppressScrollSaveRef.current) writeArticleScrollPosition(slug, event.currentTarget.scrollTop);
+        }}
+      >
         {note ? (
           <Suspense fallback={<LoadingDocument pendingPath={pendingPath} />}>
           <div key={note.slug} ref={articleRef} className={`${styles.article} ${styles.articleEnter}`} onClick={handleArticleNavigation}>
-              <MarkdownReader markdown={note.markdown} onReady={() => setRenderVersion((value) => value + 1)} />
+              <MarkdownReader markdown={note.markdown} onReady={() => handleReaderReady(note.slug)} />
           </div>
           </Suspense>
         ) : (

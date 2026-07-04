@@ -10,6 +10,7 @@ import { CommandPalette } from "./CommandPalette";
 import { EditorTabs, type EditorTabModel } from "./EditorTabs";
 import { EditorStatusContext, type EditorStatus } from "./EditorStatusContext";
 import { ExplorerTree } from "./ExplorerTree";
+import { SystemNotificationHost, SystemNotificationProvider, useSystemNotificationController } from "./SystemNotifications";
 import { TopMenu, type TopMenuDefinition } from "./TopMenu";
 import { useEditorGroups, type EditorGroupModel, type EditorLayoutNode } from "./useEditorGroups";
 import { VscodeScrollbars } from "./VscodeScrollbars";
@@ -45,6 +46,7 @@ export function AppLayout() {
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [editorStatus, setEditorStatus] = useState<EditorStatus>({ label: "Ready" });
   const [now, setNow] = useState(() => new Date());
+  const notifications = useSystemNotificationController();
   const pendingIntroRoute = useRef<string>();
   const notes = useQuery({ queryKey: ["notes"], queryFn: api.notes });
   const searchResults = useQuery({
@@ -313,6 +315,7 @@ export function AppLayout() {
   ];
 
   return (
+    <SystemNotificationProvider controller={notifications}>
     <EditorStatusContext.Provider value={setEditorStatus}>
     <div
       className={`${styles.shell}${introPhase === "intro" || introPhase === "positioning" ? ` ${styles.shellIntro}` : introPhase === "assembling" ? ` ${styles.shellAssembling}` : ""}${fastIntroExit ? ` ${styles.shellFastIntroExit}` : ""}`}
@@ -530,13 +533,18 @@ export function AppLayout() {
           {editorStatus.words !== undefined ? <span className={styles.statusItem} title="Word count">{editorStatus.words} words</span> : null}
           {editorStatus.readingMinutes !== undefined ? <span className={styles.statusItem} title="Estimated reading time"><Clock3 />{editorStatus.readingMinutes} min</span> : null}
           {editorStatus.language ? <span className={styles.statusItem}>{editorStatus.language}</span> : null}
-          <span className={styles.statusItem} title="Notifications"><Bell /></span>
+          <button className={`${styles.statusItem} ${styles.notificationButton}`} type="button" title="Notifications" aria-label={`${notifications.unread} unread notifications`} aria-expanded={notifications.centerOpen} onClick={notifications.toggleCenter}>
+            <Bell />
+            {notifications.unread ? <b>{notifications.unread > 99 ? "99+" : notifications.unread}</b> : null}
+          </button>
         </div>
       </footer>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <SystemNotificationHost controller={notifications} />
       <VscodeScrollbars />
     </div>
     </EditorStatusContext.Provider>
+    </SystemNotificationProvider>
   );
 }
 

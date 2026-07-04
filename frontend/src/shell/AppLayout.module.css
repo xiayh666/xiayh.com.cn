@@ -183,6 +183,9 @@
 .statusItem { height: 100%; min-width: 0; gap: 0.25rem; padding: 0 0.45rem; white-space: nowrap; }
 .statusItem:hover { background: hsl(var(--ink) / 0.1); }
 .statusItem svg { width: 0.8rem; height: 0.8rem; flex: 0 0 auto; }
+.notificationButton { position: relative; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.notificationButton:focus-visible { outline: 1px solid hsl(var(--accent)); outline-offset: -1px; }
+.notificationButton > b { display: grid; min-width: 0.85rem; height: 0.85rem; place-items: center; border-radius: 999px; padding: 0 0.2rem; background: hsl(var(--accent)); color: hsl(var(--surface)); font-size: 0.5rem; line-height: 1; }
 .statusError { background: hsl(var(--ctp-red) / 0.85); color: white; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

@@ -4,6 +4,7 @@ import "@milkdown/crepe/theme/classic.css";
 import { Code2, Eye, ImageUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import styles from "./AdminPage.module.css";
+import { useCodeCopyFeedback } from "./CodeCopyFeedback";
 import { vscodeCodeTheme } from "./markdownCodeTheme";
 
 type MarkdownEditorProps = {
@@ -19,6 +20,7 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
   const [mode, setMode] = useState<"visual" | "source">("visual");
   const [editorValue, setEditorValue] = useState(value);
   const [error, setError] = useState("");
+  const { handleCopy } = useCodeCopyFeedback(rootRef);
 
   changeRef.current = onChange;
   uploadRef.current = onUploadImage;
@@ -39,7 +41,7 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
         [Crepe.Feature.AI]: false,
       },
       featureConfigs: {
-        [Crepe.Feature.CodeMirror]: { theme: vscodeCodeTheme },
+        [Crepe.Feature.CodeMirror]: { theme: vscodeCodeTheme, onCopy: handleCopy },
         [Crepe.Feature.Placeholder]: { text: "Start writing your article…", mode: "block" },
         [Crepe.Feature.ImageBlock]: {
           onUpload: (file) => uploadRef.current(file),

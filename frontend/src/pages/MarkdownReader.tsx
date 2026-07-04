@@ -4,11 +4,13 @@ import "@milkdown/crepe/theme/classic.css";
 import { EditorView } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import editorStyles from "./AdminPage.module.css";
+import { useCodeCopyFeedback } from "./CodeCopyFeedback";
 import { vscodeCodeTheme } from "./markdownCodeTheme";
 
 export function MarkdownReader({ markdown, onReady }: { markdown: string; onReady?: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const readyRef = useRef(onReady);
+  const { handleCopy } = useCodeCopyFeedback(rootRef);
   readyRef.current = onReady;
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export function MarkdownReader({ markdown, onReady }: { markdown: string; onRead
         [Crepe.Feature.AI]: false,
       },
       featureConfigs: {
-        [Crepe.Feature.CodeMirror]: { theme: vscodeCodeTheme },
+        [Crepe.Feature.CodeMirror]: { theme: vscodeCodeTheme, onCopy: handleCopy },
         [Crepe.Feature.Latex]: { katexOptions: { throwOnError: false } },
       },
     });
