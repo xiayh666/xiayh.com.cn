@@ -30,8 +30,8 @@ describe("api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await api.search("cm311 network");
-    expect(fetchMock).toHaveBeenCalledWith("/api/search?q=cm311%20network", expect.any(Object));
+    await api.search("personal website");
+    expect(fetchMock).toHaveBeenCalledWith("/api/search?q=personal%20website", expect.any(Object));
   });
 
   it("throws for non-ok responses", async () => {

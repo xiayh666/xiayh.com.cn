@@ -1,51 +1,49 @@
-# CM311 Knowledge Site
+# Xiayh 的个人网站
 
-Lightweight dynamic personal knowledge site for a CM311 box running Armbian Ubuntu.
+这是 Xiayh 的个人网站，用于发布文章、展示项目与兴趣，以及维护个人在线主页。项目采用轻量化自托管方案，可部署在运行 Armbian Ubuntu 的服务器上。
 
-The private GitHub notes repository is only the raw content source. Publication metadata, render cache, sessions, share tokens, sync logs, and FTS5 search live in SQLite.
+私有 GitHub 笔记仓库仅作为原始内容来源。文章发布信息、渲染缓存、登录会话、分享令牌、同步日志和搜索索引均存储在 SQLite 中。
 
-## Layout
+## 项目结构
 
 ```text
-backend/fastify/  Current TypeScript/Fastify API service
-backend/src/      Reserved C++/Boost.Beast migration implementation
-frontend/  React + Vite static site
-deploy/    Caddy and systemd templates
-data/      local SQLite and notes checkout, ignored by Git
-doc/       goal-driven design notes
+backend/fastify/  当前使用的 TypeScript/Fastify API 服务
+backend/src/      预留的 C++/Boost.Beast 后端迁移实现
+frontend/         React + Vite 静态网站
+deploy/           Caddy 与 systemd 部署模板
+data/             本地 SQLite、媒体文件和笔记仓库，不提交到 Git
 ```
 
-## Backend setup
+## 后端开发环境
 
 ```bash
 pnpm --dir backend/fastify install
 cp deploy/blog.env .env
-# Edit .env and replace every secret/example value.
+# 编辑 .env，替换所有密钥和示例值。
 pnpm --dir backend/fastify dev
 ```
 
-Initialize the local C++ example note once before the first run:
+首次运行前，可初始化一篇本地 C++ 示例文章：
 
 ```bash
 pnpm --dir backend/fastify seed:examples
 ```
 
-Generate a password hash for `ADMIN_PASSWORD`:
+为 `ADMIN_PASSWORD` 生成密码哈希：
 
 ```bash
 pnpm --dir backend/fastify hash-password 'your-password'
 ```
 
-Generate independent JWT and sync secrets, for example:
+JWT 密钥和同步密钥必须分别生成，例如：
 
 ```bash
 openssl rand -hex 32
 ```
 
-The API listens on `127.0.0.1:8080`. The Vite development server proxies `/api`
-to that address.
+API 默认监听 `127.0.0.1:8080`。Vite 开发服务器会将 `/api` 请求代理到该地址。
 
-## Build
+## 构建
 
 ```bash
 pnpm --dir backend/fastify build
@@ -53,13 +51,13 @@ pnpm --dir frontend install
 pnpm --dir frontend build
 ```
 
-Or stage a deployable package:
+也可以通过以下命令生成可部署的软件包：
 
 ```bash
 xmake package
 ```
 
-## Unit Tests
+## 测试
 
 ```bash
 pnpm --dir backend/fastify typecheck
@@ -67,34 +65,31 @@ pnpm --dir backend/fastify test
 pnpm --dir frontend test
 ```
 
-Or run both suites through the top-level task:
+也可以通过顶层任务运行前后端测试：
 
 ```bash
 xmake test
 ```
 
-## Backend architecture
+## 后端架构
 
-- `src/app.ts`: Fastify composition root and security plugins.
-- `src/routes`: stable HTTP contract consumed by the frontend.
-- `src/services`: framework-independent note synchronization and queries.
-- `src/database.ts`: SQLite schema and connection lifecycle.
-- `src/config.ts`: environment configuration and startup validation.
+- `src/app.ts`：Fastify 应用组合入口与安全插件配置。
+- `src/routes`：供前端调用的稳定 HTTP 接口。
+- `src/services`：与 Web 框架解耦的文章同步和查询服务。
+- `src/database.ts`：SQLite 数据结构和连接生命周期管理。
+- `src/config.ts`：环境配置读取与启动校验。
 
-Fastify uses an explicit CORS allow-list, Helmet headers, request/rate limits,
-JSON Schema validation, JWT authentication in an HttpOnly SameSite cookie, and
-Origin checks on admin mutations. The timer uses a separate `SYNC_TOKEN`; it
-does not store or transmit the administrator password.
+Fastify 使用明确的 CORS 允许列表、Helmet 安全响应头、请求体和频率限制、JSON Schema 校验、JWT 身份验证、HttpOnly SameSite Cookie，以及管理操作的 Origin 校验。定时同步任务使用独立的 `SYNC_TOKEN`，不会存储或传输管理员密码。
 
-## Initial Content Sync
+## 初始化文章同步
 
-Clone the private notes repository with a read-only SSH deploy key:
+使用只读 SSH Deploy Key 克隆私有笔记仓库：
 
 ```bash
 git clone git@github.com:OWNER/PRIVATE-NOTES.git data/notes
 ```
 
-Run an admin sync from the UI or call:
+可以在管理界面中执行同步，也可以直接调用接口：
 
 ```bash
 curl -X POST http://127.0.0.1:8080/api/admin/sync \
@@ -103,23 +98,21 @@ curl -X POST http://127.0.0.1:8080/api/admin/sync \
   --data '{}'
 ```
 
-New Markdown files are indexed as `visibility = private` and `published = false`.
+新发现的 Markdown 文件默认设置为 `visibility = private` 和 `published = false`，不会直接公开发布。
 
-Images uploaded from the owner editor are stored under `MEDIA_ROOT` and served from
-`/api/media/`. The default per-image limit is 5 MiB and can be changed with
-`IMAGE_UPLOAD_LIMIT`.
+个人网站编辑器上传的图片保存在 `MEDIA_ROOT` 下，并通过 `/api/media/` 提供访问。默认单张图片上限为 5 MiB，可使用 `IMAGE_UPLOAD_LIMIT` 调整。
 
-## Deployment Notes
+## 部署说明
 
-- Put packaged files under `/opt/cm311-knowledge`.
-- Copy `deploy/blog.env` to `/opt/cm311-knowledge/blog.env`, restrict it to the service user, and replace all secrets.
-- Install production dependencies with `pnpm --dir /opt/cm311-knowledge/backend install --prod --frozen-lockfile`.
-- Install `deploy/blog-api.service`, `deploy/blog-sync.service`, and `deploy/blog-sync.timer`.
-- Point `deploy/Caddyfile` at your real domain.
-- Do not expose `data/notes`, `.git`, or `.excalidraw` sources directly.
+- 将构建产物放在 `/opt/xiayh-personal-site`。
+- 将 `deploy/blog.env` 复制到 `/opt/xiayh-personal-site/blog.env`，限制服务用户的文件权限，并替换所有密钥。
+- 使用 `pnpm --dir /opt/xiayh-personal-site/backend install --prod --frozen-lockfile` 安装生产依赖。
+- 安装 `deploy/blog-api.service`、`deploy/blog-sync.service` 和 `deploy/blog-sync.timer`。
+- 确认 `deploy/Caddyfile` 使用实际域名。
+- 不要直接暴露 `data/notes`、`.git` 或 `.excalidraw` 源文件。
 
-## Current limits
+## 当前限制
 
-- Search currently uses indexed SQLite tables with bounded `LIKE` queries; FTS5 can replace the repository function without changing routes.
-- JWT logout clears the browser cookie but does not maintain a server-side revocation list; tokens are intentionally short-lived.
-- Sync scans Markdown only; Excalidraw preview mapping remains reserved in the API model.
+- 搜索目前使用带有结果数量限制的 SQLite `LIKE` 查询；后续可以在不改变接口的情况下替换为 FTS5。
+- JWT 登出会清除浏览器 Cookie，但暂未维护服务端令牌吊销列表，因此登录令牌使用较短的有效期。
+- 同步任务目前只扫描 Markdown 文件；Excalidraw 预览映射仍作为 API 模型中的预留能力。

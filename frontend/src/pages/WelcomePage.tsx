@@ -7,7 +7,7 @@ import styles from "./WelcomePage.module.css";
 
 const commands = ["whoami", "ls ./notes", "cat ./current-focus.md"];
 const commandOutput = ["xiayh — developer / builder / writer", "C++   backend   web", "building systems that remain understandable"];
-const modelNames = ["ARCH LINUX", "MINECRAFT", "REDSTONE", "STM32"];
+const modelNames = ["C++", "ARCH LINUX", "MINECRAFT", "REDSTONE", "STM32"];
 const profile = {
   name: import.meta.env.VITE_PROFILE_NAME?.trim() || "Xiayh",
   avatar: import.meta.env.VITE_PROFILE_AVATAR?.trim() || "https://github.com/xiayh666.png?size=160",
@@ -164,6 +164,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   const navigate = useNavigate();
   const leaveTimerRef = useRef<number>();
   const [activeModel, setActiveModel] = useState(0);
+  const [modelRotationEnabled, setModelRotationEnabled] = useState(!intro);
   const [notes, setNotes] = useState<NoteSummary[]>(initialNotes);
   const [stats, setStats] = useState<SiteStats>();
   const [updatesPulse, setUpdatesPulse] = useState(0);
@@ -174,6 +175,16 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   const openExternal = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
 
   useEffect(() => () => window.clearTimeout(leaveTimerRef.current), []);
+
+  useEffect(() => {
+    if (!intro) {
+      setModelRotationEnabled(true);
+      return;
+    }
+    setModelRotationEnabled(false);
+    const timer = window.setTimeout(() => setModelRotationEnabled(true), 2100);
+    return () => window.clearTimeout(timer);
+  }, [intro]);
 
   useEffect(() => {
     if (initialNotes.length) setNotes(initialNotes);
@@ -396,7 +407,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
                 <span className={`${styles.corner} ${styles.cornerTopRight}`} aria-hidden="true" />
                 <span className={`${styles.corner} ${styles.cornerBottomLeft}`} aria-hidden="true" />
                 <span className={`${styles.corner} ${styles.cornerBottomRight}`} aria-hidden="true" />
-                <span className={styles.modelContent}><span className={styles.modelGrid} aria-hidden="true" /><PixelAssembly active={!leaving} onShapeChange={setActiveModel} /></span>
+                <span className={styles.modelContent}><span className={styles.modelGrid} aria-hidden="true" /><PixelAssembly active={!leaving} rotationEnabled={modelRotationEnabled} onShapeChange={setActiveModel} /></span>
                 <span className={styles.modelCaption}>SELECTED OBJECT / PARTICLE ASSEMBLY</span>
             <span className={styles.enterHint}>CLICK TO ENTER</span>
           </button>
@@ -427,7 +438,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
 
         {!workspaceMode ? <>
           <div className={styles.edgeRuler} aria-hidden="true"><span>Y</span><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-          <div className={styles.systemStatus} aria-hidden="true"><i /><span>SYSTEM READY</span><b>5000 PTS</b><b>04 FORMS</b></div>
+          <div className={styles.systemStatus} aria-hidden="true"><i /><span>SYSTEM READY</span><b>5000 PTS</b><b>05 FORMS</b></div>
           <div className={styles.footerMark} aria-hidden="true"><b>DATA.</b><span>XIAYH.COM.CN / 2026</span></div>
         </> : null}
       </div>
@@ -457,7 +468,7 @@ function BlogArchiveOverview({ notes, stats, onOpenExplorer, onOpenNote }: {
         <small>INDEX / PUBLIC NOTES</small>
       </header>
       <div className={styles.blogArchiveSummary}>
-        <span>KNOWLEDGE BASE / 01</span>
+        <span>PERSONAL WEBSITE / 01</span>
         <strong>技术记录与长期思考</strong>
         <p>从工程实践到系统设计，以可检索的文章持续整理。</p>
         <dl>

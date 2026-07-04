@@ -1,12 +1,12 @@
 [Unit]
-Description=CM311 Knowledge repository sync
+Description=Xiayh Personal Website article sync
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-User=cm311-blog
-Group=cm311-blog
-WorkingDirectory=/opt/cm311-knowledge
-EnvironmentFile=/opt/cm311-knowledge/blog.env
-ExecStart=/opt/cm311-knowledge/deploy/sync-notes.sh
+User=xiayh-site
+Group=xiayh-site
+WorkingDirectory=/opt/xiayh-personal-site
+EnvironmentFile=/opt/xiayh-personal-site/blog.env
+ExecStart=/opt/xiayh-personal-site/deploy/sync-notes.sh

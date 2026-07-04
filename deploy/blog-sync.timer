@@ -1,5 +1,5 @@
 [Unit]
-Description=Run CM311 Knowledge sync periodically
+Description=Synchronize Xiayh Personal Website articles periodically
 
 [Timer]
 OnBootSec=2min

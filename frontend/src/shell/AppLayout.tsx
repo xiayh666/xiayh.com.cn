@@ -712,7 +712,9 @@ function EditorContentPlane({ tab, reportStatus, onBrowse }: {
   onBrowse: () => void;
 }) {
   const [displayedTab, setDisplayedTab] = useState(tab);
-  const [flip, setFlip] = useState<{ front: EditorTabModel; back: EditorTabModel; completed: boolean }>();
+  const [flip, setFlip] = useState<{ front: EditorTabModel; back: EditorTabModel }>();
+  const cachedTabsRef = useRef(new Map<string, EditorTabModel>([[tab.id, tab]]));
+  cachedTabsRef.current.set(tab.id, tab);
 
   useEffect(() => {
     if (tab.id === displayedTab.id) return;
@@ -724,23 +726,40 @@ function EditorContentPlane({ tab, reportStatus, onBrowse }: {
       setDisplayedTab(tab);
       return;
     }
-    setFlip({ front: displayedTab, back: tab, completed: false });
+    setFlip({ front: displayedTab, back: tab });
     const timer = window.setTimeout(() => {
       setDisplayedTab(tab);
-      setFlip((current) => current ? { ...current, completed: true } : current);
+      setFlip(undefined);
     }, 440);
     return () => window.clearTimeout(timer);
   }, [displayedTab, tab]);
 
-  if (!flip) return <EditorTabContent tab={displayedTab} reportStatus={reportStatus} onBrowse={onBrowse} />;
+  const waitingForWelcomeFlip = !flip
+    && displayedTab.id !== tab.id
+    && displayedTab.kind === "welcome"
+    && tab.kind === "article"
+    && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const visibleId = flip?.back.id ?? (waitingForWelcomeFlip ? displayedTab.id : tab.id);
+  const cachedContent = <div className={styles.editorContentCache}>
+      {[...cachedTabsRef.current.values()].map((cachedTab) => (
+        <div key={cachedTab.id} className={styles.editorCachedPlane} hidden={cachedTab.id !== visibleId}>
+          <EditorTabContent tab={cachedTab} reportStatus={!flip && cachedTab.id === visibleId && reportStatus} onBrowse={onBrowse} />
+        </div>
+      ))}
+    </div>;
+
+  if (!flip) return <div className={styles.editorContentStack}>{cachedContent}</div>;
   return (
-    <div className={styles.editorFlipScene} aria-hidden={flip.completed ? undefined : true}>
-      <div className={`${styles.editorFlipCard}${flip.completed ? ` ${styles.editorFlipCardComplete}` : ""}`}>
-        {!flip.completed ? <div className={`${styles.editorFlipFace} ${styles.editorFlipFront}`}>
+    <div className={styles.editorContentStack}>
+      {cachedContent}
+      <div className={styles.editorFlipScene} aria-hidden="true">
+        <div className={styles.editorFlipCard}>
+          <div className={`${styles.editorFlipFace} ${styles.editorFlipFront}`}>
           <EditorTabContent tab={flip.front} reportStatus={false} onBrowse={onBrowse} />
-        </div> : null}
-        <div className={`${styles.editorFlipFace} ${styles.editorFlipBack}`} data-editor-flip-face="back">
-          <EditorTabContent tab={flip.back} reportStatus={flip.completed && reportStatus} onBrowse={onBrowse} />
+          </div>
+          <div className={`${styles.editorFlipFace} ${styles.editorFlipBack}`} data-editor-flip-face="back">
+            <EditorTabContent tab={flip.back} reportStatus={false} onBrowse={onBrowse} />
+          </div>
         </div>
       </div>
     </div>

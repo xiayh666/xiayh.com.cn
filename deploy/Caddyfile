@@ -2,10 +2,10 @@
     email admin@example.com
 }
 
-notes.example.com {
+xiayh.com.cn {
     encode zstd gzip
 
-    root * /opt/cm311-knowledge/frontend
+    root * /opt/xiayh-personal-site/frontend
     file_server
 
     @api path /api/*

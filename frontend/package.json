@@ -1,5 +1,6 @@
 {
-  "name": "cm311-knowledge-frontend",
+  "name": "xiayh-personal-site-frontend",
+  "description": "Frontend for Xiayh's personal website",
   "private": true,
   "version": "0.1.0",
   "type": "module",

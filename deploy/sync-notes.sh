@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/opt/cm311-knowledge"
+ROOT="/opt/xiayh-personal-site"
 REPO="$ROOT/data/notes"
 
 if [[ ! -d "$REPO/.git" ]]; then

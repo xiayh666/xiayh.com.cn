@@ -11,7 +11,7 @@ let app: FastifyInstance;
 let cookie = "";
 
 function multipartFile(content: Buffer, filename: string, mime: string) {
-  const boundary = "----cm311-test-boundary";
+  const boundary = "----xiayh-site-test-boundary";
   return {
     headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
     payload: Buffer.concat([
@@ -24,7 +24,7 @@ function multipartFile(content: Buffer, filename: string, mime: string) {
 
 before(async () => {
   process.env.NODE_ENV = "test";
-  const root = mkdtempSync(join(tmpdir(), "cm311-api-"));
+  const root = mkdtempSync(join(tmpdir(), "xiayh-site-api-"));
   const notesRepo = join(root, "notes");
   const mediaRoot = join(root, "media");
   mkdirSync(notesRepo);
@@ -84,7 +84,7 @@ test("login issues JWT cookie and sync keeps new notes private", async () => {
   assert.equal(login.statusCode, 200);
   const setCookie = login.headers["set-cookie"];
   cookie = (Array.isArray(setCookie) ? setCookie[0] : setCookie)?.split(";")[0] ?? "";
-  assert.match(cookie, /^cm311_session=/);
+  assert.match(cookie, /^xiayh_site_session=/);
 
   const sync = await app.inject({ method: "POST", url: "/api/admin/sync", headers: { cookie }, payload: {} });
   assert.equal(sync.statusCode, 200);

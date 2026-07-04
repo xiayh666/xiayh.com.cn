@@ -60,7 +60,7 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     syncToken,
     jwtSecret: jwtSecret || "test-only-secret-that-is-at-least-32-characters",
     jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "8h",
-    cookieName: process.env.COOKIE_NAME ?? "cm311_session",
+    cookieName: process.env.COOKIE_NAME ?? "xiayh_site_session",
     cookieSecure: boolean("COOKIE_SECURE", process.env.NODE_ENV === "production"),
     corsOrigins: (process.env.CORS_ORIGINS ?? "")
       .split(",")

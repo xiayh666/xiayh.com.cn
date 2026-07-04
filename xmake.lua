@@ -47,7 +47,7 @@ task("test")
 task("deploy")
     set_menu {
         usage = "xmake deploy --host=<host>",
-        description = "Placeholder for rsync/scp deployment to the CM311 box",
+        description = "Stage Xiayh's personal website for rsync/scp deployment",
         options = {
             {nil, "host", "kv", nil, "Target SSH host"},
         },
@@ -56,5 +56,5 @@ task("deploy")
         local host = import("core.base.option").get("host")
         assert(host, "pass --host=<ssh-host>")
         os.exec("xmake package")
-        print("Package is ready at dist/package. Copy it to " .. host .. ":/opt/cm311-knowledge")
+        print("Package is ready at dist/package. Copy it to " .. host .. ":/opt/xiayh-personal-site")
     end)

@@ -1,22 +1,22 @@
 [Unit]
-Description=CM311 Knowledge API
+Description=Xiayh Personal Website API
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=cm311-blog
-Group=cm311-blog
-WorkingDirectory=/opt/cm311-knowledge
-EnvironmentFile=/opt/cm311-knowledge/blog.env
-ExecStart=/usr/bin/node /opt/cm311-knowledge/backend/dist/src/server.js
+User=xiayh-site
+Group=xiayh-site
+WorkingDirectory=/opt/xiayh-personal-site
+EnvironmentFile=/opt/xiayh-personal-site/blog.env
+ExecStart=/usr/bin/node /opt/xiayh-personal-site/backend/dist/src/server.js
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/cm311-knowledge/data
+ReadWritePaths=/opt/xiayh-personal-site/data
 
 [Install]
 WantedBy=multi-user.target
