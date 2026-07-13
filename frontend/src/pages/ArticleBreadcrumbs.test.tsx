@@ -7,11 +7,11 @@ import { ArticleBreadcrumbs } from "./ArticleBreadcrumbs";
 const notes: NoteSummary[] = [
   {
     id: 1, path: "web/http/cache.md", slug: "web/http/cache", title: "Cache", summary: "", type: "markdown",
-    visibility: "public", published: true, pinned: false, status: "active", updatedAt: "", publishedAt: "", viewCount: 0, previewPath: "",
+    visibility: "public", published: true, pinned: false, status: "active", updatedAt: "", publishedAt: "", viewCount: 0, wordCount: 1200, previewPath: "",
   },
   {
     id: 2, path: "web/react/query.md", slug: "web/react/query", title: "Query", summary: "", type: "markdown",
-    visibility: "public", published: true, pinned: false, status: "active", updatedAt: "", publishedAt: "", viewCount: 0, previewPath: "",
+    visibility: "public", published: true, pinned: false, status: "active", updatedAt: "", publishedAt: "", viewCount: 0, wordCount: 1200, previewPath: "",
   },
 ];
 

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS documents (
   preview_path TEXT NOT NULL DEFAULT '',
   published_at TEXT,
   view_count INTEGER NOT NULL DEFAULT 0,
+  word_count INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL
 );
 
@@ -60,6 +61,7 @@ export function openDatabase(path: string): DatabaseSync {
   );
   if (!columns.has("published_at")) db.exec("ALTER TABLE documents ADD COLUMN published_at TEXT");
   if (!columns.has("view_count")) db.exec("ALTER TABLE documents ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0");
+  if (!columns.has("word_count")) db.exec("ALTER TABLE documents ADD COLUMN word_count INTEGER NOT NULL DEFAULT 0");
   if (!columns.has("markdown")) db.exec("ALTER TABLE documents ADD COLUMN markdown TEXT NOT NULL DEFAULT ''");
   return db;
 }

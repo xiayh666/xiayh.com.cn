@@ -3,14 +3,19 @@ import { Activity, BookOpen, FolderGit2, Github, Mail, MessageCircle, MessageSqu
 import { useNavigate } from "react-router-dom";
 import { api, type NoteSummary, type SiteStats } from "../api";
 import { PixelAssembly } from "./PixelAssembly";
+import profileAvatar from "../assets/profile-avatar.jpg";
 import styles from "./WelcomePage.module.css";
 
-const commands = ["whoami", "ls ./notes", "cat ./current-focus.md"];
-const commandOutput = ["xiayh — developer / builder / writer", "C++   backend   web", "building systems that remain understandable"];
+const commands = ["uptime -p", "journalctl -p warning -n 3", "ss -Hlt state listening"];
+const commandOutput = [
+  ["up 7 days, 4 hours", "load average: 0.08, 0.11, 0.09", "friday deploy lock: engaged"],
+  ["-- No entries --", "dns blame check: inconclusive", "works-on-my-machine flag: ignored"],
+  ["LISTEN 0 511 loopback:**** 0.0.0.0:* users:((\"naming-things\"))", "LISTEN 0 128 loopback:**** 0.0.0.0:* users:((\"cache-invalidator\"))", "LISTEN 0  64 loopback:****    [::]:* users:((\"off-by-one\"))"],
+];
 const modelNames = ["C++", "ARCH LINUX", "MINECRAFT", "REDSTONE", "STM32"];
 const profile = {
   name: import.meta.env.VITE_PROFILE_NAME?.trim() || "Xiayh",
-  avatar: import.meta.env.VITE_PROFILE_AVATAR?.trim() || "https://github.com/xiayh666.png?size=160",
+  avatar: import.meta.env.VITE_PROFILE_AVATAR?.trim() || profileAvatar,
   email: import.meta.env.VITE_PROFILE_EMAIL?.trim() || "NOT PUBLIC",
   qq: import.meta.env.VITE_PROFILE_QQ?.trim() || "NOT PUBLIC",
   wechat: import.meta.env.VITE_PROFILE_WECHAT?.trim() || "NOT PUBLIC",
@@ -24,7 +29,7 @@ function useTerminalTyping(active: boolean) {
     const text = commands[state.command];
     const complete = state.length === text.length;
     const empty = state.length === 0;
-    const delay = complete && !state.deleting ? 1450 : empty && state.deleting ? 260 : state.deleting ? 32 : 72;
+    const delay = complete && !state.deleting ? 2300 : empty && state.deleting ? 260 : state.deleting ? 32 : 72;
     const timer = window.setTimeout(() => {
       if (complete && !state.deleting) setState((value) => ({ ...value, deleting: true }));
       else if (empty && state.deleting) setState({ command: (state.command + 1) % commands.length, length: 0, deleting: false });
@@ -35,7 +40,7 @@ function useTerminalTyping(active: boolean) {
 
   return {
     text: commands[state.command].slice(0, state.length),
-    output: state.length === commands[state.command].length && !state.deleting ? commandOutput[state.command] : "\u00a0",
+    output: state.length === commands[state.command].length && !state.deleting ? commandOutput[state.command] : ["\u00a0"],
   };
 }
 
@@ -241,11 +246,6 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
     .sort((left, right) => Date.parse(right.publishedAt || right.updatedAt) - Date.parse(left.publishedAt || left.updatedAt))
     .slice(0, 3);
 
-  const focusUpdates = () => {
-    setUpdatesPulse((value) => value + 1);
-    updatesRef.current?.focus();
-  };
-
   return (
     <section
       className={`${styles.page} ${intro ? styles.introActive : ""} ${workspaceMode ? styles.workspacePage : ""} ${leaving ? styles.pageLeaving : ""}`}
@@ -253,29 +253,29 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
     >
       {!workspaceMode ? <div className={styles.terminalField} data-welcome-environment="true" aria-hidden="true">
         <section className={`${styles.terminalGhost} ${styles.terminalGhostPrimary}`}>
-          <div className={styles.terminalGhostBar}><Terminal /><span>xiayh@xiarch: ~</span></div>
-          <p><span className={styles.green}>xiayh</span>@<span className={styles.blue}>xiarch</span> ~&gt; <b>{terminal.text}</b><i /></p>
-          <small>{terminal.output}</small>
+          <div className={styles.terminalGhostBar}><Terminal /><span>operator@node-01: ~</span></div>
+          <p><span className={styles.green}>operator</span>@<span className={styles.blue}>node-01</span> ~&gt; <b>{terminal.text}</b><i /></p>
+          <small>{terminal.output.map((line) => <span key={line}>{line}</span>)}</small>
         </section>
 
         <section className={`${styles.terminalGhost} ${styles.terminalGhostMonitor}`}>
-          <header>PROCESS MONITOR / 06</header>
-          <div><span>web.frontend</span><i /><b>RUN</b></div>
-          <div><span>fastify.api</span><i /><b>RUN</b></div>
-          <div><span>sqlite.cache</span><i /><b>IDLE</b></div>
+          <header>SERVICE HEALTH / 03</header>
+          <div><span>edge-gateway</span><i /><b>ACTIVE</b></div>
+          <div><span>app-runtime</span><i /><b>ACTIVE</b></div>
+          <div><span>data-store</span><i /><b>READY</b></div>
         </section>
 
         <section className={`${styles.terminalGhost} ${styles.terminalGhostTicker}`}>
-          <div><span>pnpm build</span><b>✓ 1703 modules</b><span>xmake project -k compile_commands</span><b>✓ ready</b><span>git status --short</span><b>working tree</b></div>
+          <div><span>bug</span><b>→</b><span>fix</span><b>→</b><span>test</span><b>→</b><span>fix</span><b>→</b><span>bug</span><b>→</b><span>fix</span><b>→</b><span>test</span><b>→</b><span>fix</span><b>→</b><span>bug</span><b>→</b></div>
         </section>
 
         <section className={`${styles.terminalGhost} ${styles.terminalGhostLog}`}>
-          <header>LIVE LOG.</header>
+          <header>JOURNAL TAIL.</header>
           <div>
-            <span>[00:01] model.target / arch</span>
-            <span>[00:02] particle.count / 5000</span>
-            <span>[00:03] render.canvas / ready</span>
-            <span>[00:04] workspace / waiting</span>
+            <span>[09:57] dns / there is no way it is dns</span>
+            <span>[09:58] dns / it was dns</span>
+            <span>[09:59] regex / now there are two problems</span>
+            <span>[10:00] recursion / see recursion</span>
           </div>
         </section>
       </div> : null}
@@ -327,7 +327,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
               <span className={styles.avatarFrame}>
                 {avatarFailed ? <b>{profile.name.slice(0, 1)}</b> : <img src={profile.avatar} alt={`${profile.name} 的头像`} onError={() => setAvatarFailed(true)} />}
               </span>
-              <span><small>PROFILE</small><strong>{profile.name}</strong><b>SWU</b><b>Computer Science</b></span>
+              <span><strong>{profile.name}</strong><b>Southwest University</b><b>Computer Science</b></span>
             </div>
 
             <button type="button" className={styles.musicControl} aria-pressed={music.playing} onClick={music.toggle}>
@@ -388,8 +388,8 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
           <div className={styles.navigation}>
             <div className={styles.navigationHeader}><span>MODULE INDEX.</span></div>
             <LabCard index="01" label="博客" detail="" icon={<BookOpen />} onClick={beginBrowse} />
-            <LabCard index="02" label="动态" detail="" icon={<Activity />} onClick={focusUpdates} />
-            <LabCard index="03" label="仓库" detail="" icon={<FolderGit2 />} onClick={() => openExternal("https://github.com/xiayh666?tab=repositories")} />
+            <LabCard index="02" label="动态" detail="" icon={<Activity />} disabled />
+            <LabCard index="03" label="仓库" detail="" icon={<FolderGit2 />} disabled />
             <LabCard index="04" label="留言" detail="" icon={<MessageSquareText />} disabled />
             <LabCard index="05" label="关于" detail="" icon={<UserRound />} disabled />
             <LabCard index="06" label="GitHub" detail="" icon={<Github />} onClick={() => openExternal("https://github.com/xiayh666")} />
@@ -399,7 +399,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
         <section className={`${styles.quadrant} ${styles.modelArea}`}>
           {intro ? (
             <>
-          <button type="button" className={styles.modelDisplay} aria-label="进入工作区" data-intro-dismiss="true" onClick={beginBrowse}>
+          <div className={styles.modelDisplay}>
                 <span className={styles.modelBackplate} aria-hidden="true" />
                 <svg className={styles.modelFrame} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect x="0.3" y="0.3" width="99.4" height="99.4" pathLength="1" /></svg>
                 <span className={styles.modelLabel}>MODEL DISPLAY.</span>
@@ -408,9 +408,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
                 <span className={`${styles.corner} ${styles.cornerBottomLeft}`} aria-hidden="true" />
                 <span className={`${styles.corner} ${styles.cornerBottomRight}`} aria-hidden="true" />
                 <span className={styles.modelContent}><span className={styles.modelGrid} aria-hidden="true" /><PixelAssembly active={!leaving} rotationEnabled={modelRotationEnabled} onShapeChange={setActiveModel} /></span>
-                <span className={styles.modelCaption}>SELECTED OBJECT / PARTICLE ASSEMBLY</span>
-            <span className={styles.enterHint}>CLICK TO ENTER</span>
-          </button>
+          </div>
 
           <span className={styles.blogLoadingMark} aria-hidden="true">
             <span><BookOpen /></span>
@@ -430,7 +428,6 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
             <BlogArchiveOverview
               notes={notes}
               stats={stats}
-              onOpenExplorer={onBrowse}
               onOpenNote={openNote}
             />
           )}
@@ -438,7 +435,6 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
 
         {!workspaceMode ? <>
           <div className={styles.edgeRuler} aria-hidden="true"><span>Y</span><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-          <div className={styles.systemStatus} aria-hidden="true"><i /><span>SYSTEM READY</span><b>5000 PTS</b><b>05 FORMS</b></div>
           <div className={styles.footerMark} aria-hidden="true"><b>DATA.</b><span>XIAYH.COM.CN / 2026</span></div>
         </> : null}
       </div>
@@ -446,20 +442,15 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   );
 }
 
-function BlogArchiveOverview({ notes, stats, onOpenExplorer, onOpenNote }: {
+function BlogArchiveOverview({ notes, stats, onOpenNote }: {
   notes: NoteSummary[];
   stats?: SiteStats;
-  onOpenExplorer?: () => void;
   onOpenNote: (slug: string) => void;
 }) {
-  const sections = Object.entries(notes.reduce<Record<string, number>>((result, note) => {
-    const section = note.path.split("/").filter(Boolean)[0] || "ROOT";
-    result[section] = (result[section] ?? 0) + 1;
-    return result;
-  }, {})).sort((left, right) => right[1] - left[1]).slice(0, 4);
-  const latest = [...notes]
-    .sort((left, right) => Date.parse(right.publishedAt || right.updatedAt) - Date.parse(left.publishedAt || left.updatedAt))
-    .slice(0, 2);
+  const activity = buildBlogArchiveActivity(notes);
+  const readTrace = [...notes]
+    .sort((left, right) => right.viewCount - left.viewCount || Date.parse(right.publishedAt || right.updatedAt) - Date.parse(left.publishedAt || left.updatedAt))
+    .slice(0, 6);
 
   return (
     <section className={styles.blogArchive} aria-label="博客概览">
@@ -468,32 +459,168 @@ function BlogArchiveOverview({ notes, stats, onOpenExplorer, onOpenNote }: {
         <small>INDEX / PUBLIC NOTES</small>
       </header>
       <div className={styles.blogArchiveSummary}>
-        <span>PERSONAL WEBSITE / 01</span>
-        <strong>技术记录与长期思考</strong>
-        <p>从工程实践到系统设计，以可检索的文章持续整理。</p>
         <dl>
           <div><dt>ARTICLES</dt><dd>{(stats?.blogCount ?? notes.length) || "—"}</dd></div>
           <div><dt>TOTAL READS</dt><dd>{stats?.totalViews ?? "—"}</dd></div>
+          <div><dt>WORDS</dt><dd>{formatWordCount(activity.totalWords)}</dd></div>
         </dl>
-        <button type="button" onClick={onOpenExplorer}>OPEN BLOG EXPLORER <span>↗</span></button>
       </div>
       <div className={styles.blogArchiveIndex}>
-        <span>SECTION INDEX.</span>
+        <span>READ TRACE.</span>
         <ol>
-          {sections.map(([section, count], index) => <li key={section}><i>{String(index + 1).padStart(2, "0")}</i><b>{section}</b><small>{count}</small></li>)}
-          {!sections.length ? <li><i>00</i><b>WAITING FOR DATA</b><small>—</small></li> : null}
+          {readTrace.map((note, index) => (
+            <li key={note.id}>
+              <button type="button" onClick={() => onOpenNote(note.slug)}>
+                <i>{String(index + 1).padStart(2, "0")}</i>
+                <b>{note.title}</b>
+                <small>{formatWordCount(note.viewCount)}</small>
+              </button>
+            </li>
+          ))}
+          {!readTrace.length ? <li><span><i>00</i><b>WAITING FOR DATA</b><small>—</small></span></li> : null}
         </ol>
       </div>
-      <div className={styles.blogArchiveLatest}>
-        <span>LATEST NOTES.</span>
-        {latest.map((note) => (
-          <button key={note.id} type="button" onClick={() => onOpenNote(note.slug)}>
-            <strong>{note.title}</strong><time>{formatUpdateDate(note.publishedAt || note.updatedAt)}</time>
-          </button>
-        ))}
+      <div className={styles.blogArchiveActivity}>
+        <header>
+          <span>WRITING ACTIVITY.</span>
+          <small>{formatWordCount(activity.totalWords)} WORDS / LAST 12 MONTHS</small>
+        </header>
+        <div className={styles.activityCalendar} aria-label="最近十二个月文章发布频率热力图">
+          <div
+            className={styles.activityMonths}
+            style={{ gridTemplateColumns: `repeat(${activity.weeks.length}, var(--activity-cell))` }}
+            aria-hidden="true"
+          >
+            {activity.months.map((month) => <span key={`${month.label}-${month.column}`} style={{ gridColumn: `${month.column + 1} / span ${month.span}` }}>{month.label}</span>)}
+          </div>
+          <div className={styles.activityWeekdays} aria-hidden="true">
+            <span />
+            <span>Mon</span>
+            <span />
+            <span>Wed</span>
+            <span />
+            <span>Fri</span>
+            <span />
+          </div>
+          <div
+            className={styles.activityGrid}
+            style={{ gridTemplateColumns: `repeat(${activity.weeks.length}, var(--activity-cell))` }}
+          >
+            {activity.weeks.map((week) => (
+              <div key={week.key} className={styles.activityWeek}>
+                {week.days.map((day) => (
+                  <span
+                    key={day.date}
+                    data-level={day.level}
+                    data-empty={day.empty ? "true" : undefined}
+                    title={`${day.label}: ${formatWordCount(day.words)} words`}
+                    aria-label={`${day.label}: ${formatWordCount(day.words)} words`}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <footer className={styles.activityLegend} aria-hidden="true">
+          <span>Less</span>
+          {[0, 1, 2, 3, 4].map((level) => <i key={level} data-level={level} />)}
+          <span>More</span>
+        </footer>
       </div>
     </section>
   );
+}
+
+type BlogActivityDay = { date: string; label: string; words: number; level: number; empty: boolean };
+type BlogActivityWeek = { key: string; days: BlogActivityDay[] };
+type BlogActivityMonth = { label: string; column: number; span: number };
+
+function buildBlogArchiveActivity(notes: NoteSummary[]): { weeks: BlogActivityWeek[]; months: BlogActivityMonth[]; totalWords: number } {
+  const today = startOfLocalDay(new Date());
+  const rangeStart = addLocalDays(today, -364);
+  const calendarStart = addLocalDays(rangeStart, -rangeStart.getDay());
+  const calendarEnd = addLocalDays(today, 6 - today.getDay());
+  const counts = new Map<string, number>();
+
+  for (const note of notes) {
+    const timestamp = Date.parse(note.publishedAt || note.updatedAt);
+    if (!Number.isFinite(timestamp)) continue;
+    const date = startOfLocalDay(new Date(timestamp));
+    if (date < rangeStart || date > today) continue;
+    const key = localDateKey(date);
+    counts.set(key, (counts.get(key) ?? 0) + Math.max(0, note.wordCount ?? 0));
+  }
+
+  const maxWords = Math.max(0, ...counts.values());
+
+  const weeks: BlogActivityWeek[] = [];
+  const months: BlogActivityMonth[] = [];
+  const monthFormatter = new Intl.DateTimeFormat("en", { month: "short" });
+  let current = new Date(calendarStart);
+  let lastMonth = "";
+  let column = 0;
+
+  while (current <= calendarEnd) {
+    const weekStart = new Date(current);
+    const days = Array.from({ length: 7 }, (_, dayIndex): BlogActivityDay => {
+      const date = addLocalDays(weekStart, dayIndex);
+      const key = localDateKey(date);
+      const inRange = date >= rangeStart && date <= today;
+      const words = inRange ? counts.get(key) ?? 0 : 0;
+      return {
+        date: key,
+        label: formatActivityDate(date),
+        words,
+        level: inRange ? activityLevel(words, maxWords) : 0,
+        empty: !inRange,
+      };
+    });
+    const firstVisibleDay = days.find((day) => !day.empty);
+    if (firstVisibleDay) {
+      const firstDate = new Date(`${firstVisibleDay.date}T00:00:00`);
+      const monthKey = `${firstDate.getFullYear()}-${firstDate.getMonth()}`;
+      if (monthKey !== lastMonth) {
+        months.push({ label: monthFormatter.format(firstDate), column, span: 4 });
+        lastMonth = monthKey;
+      }
+    }
+    weeks.push({ key: localDateKey(weekStart), days });
+    current = addLocalDays(current, 7);
+    column += 1;
+  }
+
+  return { weeks, months, totalWords: [...counts.values()].reduce((sum, count) => sum + count, 0) };
+}
+
+function activityLevel(words: number, maxWords: number) {
+  if (words <= 0 || maxWords <= 0) return 0;
+  const ratio = words / maxWords;
+  if (ratio <= 0.25) return 1;
+  if (ratio <= 0.5) return 2;
+  if (ratio <= 0.75) return 3;
+  return 4;
+}
+
+function startOfLocalDay(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+}
+
+function addLocalDays(value: Date, days: number) {
+  const date = new Date(value);
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function localDateKey(value: Date) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function formatActivityDate(value: Date) {
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(value);
+}
+
+function formatWordCount(value: number) {
+  return new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(value);
 }
 
 function LabCard({ index, label, detail, icon, onClick, disabled = false }: {
@@ -510,9 +637,8 @@ function LabCard({ index, label, detail, icon, onClick, disabled = false }: {
       <span className={styles.cardIcon}>{icon}</span>
       <span className={styles.cardCopy}>
         <strong>{label}</strong>
-        <small>{detail}</small>
+        {detail ? <small>{detail}</small> : null}
       </span>
-      <span className={styles.cardArrow} aria-hidden="true">↗</span>
     </button>
   );
 }

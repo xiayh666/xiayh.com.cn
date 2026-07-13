@@ -19,6 +19,7 @@ const note: NoteSummary = {
   updatedAt: "2026-06-29T00:00:00.000Z",
   publishedAt: "2026-06-29T00:00:00.000Z",
   viewCount: 0,
+  wordCount: 1200,
   previewPath: "",
 };
 

@@ -12,6 +12,7 @@ export type NoteSummary = {
   updatedAt: string;
   publishedAt: string;
   viewCount: number;
+  wordCount: number;
   previewPath: string;
   tags?: string[];
 };

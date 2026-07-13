@@ -3,7 +3,6 @@
 .introOverlayPositioning { pointer-events: none; }
 .introOverlayAssembling { top: var(--intro-target-top, calc(34px + 2.25rem)); right: var(--intro-target-right, 0); bottom: var(--intro-target-bottom, 22px); left: var(--intro-target-left, calc(48px + var(--sidebar-width, 300px))); pointer-events: none; }
 .introOverlayAssembling { animation: intro-overlay-release 1000ms linear both; }
-.introOverlayPositioning [data-intro-dismiss="true"], .introOverlayAssembling [data-intro-dismiss="true"] { opacity: 0; transition: opacity 160ms linear; }
 .introOverlay [data-welcome-card="true"] { backface-visibility: hidden; transform-style: preserve-3d; }
 .introOverlayArticleFlip { perspective: 1600px; }
 .introOverlayArticleFlip [data-welcome-mode="homepage"] [data-welcome-card="true"] { animation: homepage-card-front-flip 440ms cubic-bezier(0.45, 0, 0.2, 1) both; pointer-events: none; }
@@ -41,7 +40,6 @@
 .titlebar { position: relative; z-index: 100; display: flex; min-width: 0; align-items: center; border-bottom: 1px solid hsl(var(--line)); padding: 0 0.5rem; background: hsl(var(--titlebar)); color: hsl(var(--muted)); font-size: 0.75rem; }
 .titlebarStart, .titlebarCenter, .titlebarActions, .menu, .statusStart, .statusRight, .statusItem { display: flex; align-items: center; }
 .titlebarStart { min-width: 0; gap: 0.75rem; }
-.brandIcon { width: 1rem; height: 1rem; color: hsl(var(--accent)); }
 .menu { display: none; align-self: stretch; gap: 0.08rem; }
 .menuGroup { position: relative; display: flex; align-items: stretch; }
 .menuButton, .titlebarButton, .action, .treeButton { border: 0; background: transparent; cursor: pointer; }

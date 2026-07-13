@@ -21,6 +21,7 @@ type DocumentRow = {
   previewPath: string;
   publishedAt: string;
   viewCount: number;
+  wordCount: number;
   tags: string;
   html?: string;
   markdown?: string;
@@ -37,7 +38,8 @@ const summaryColumns = `
   published, pinned, status, updated_at AS updatedAt,
   preview_path AS previewPath,
   COALESCE(published_at, updated_at) AS publishedAt,
-  view_count AS viewCount
+  view_count AS viewCount,
+  word_count AS wordCount
   , COALESCE((SELECT json_group_array(t.name) FROM document_tags dt JOIN tags t ON t.id = dt.tag_id WHERE dt.document_id = documents.id), '[]') AS tags
 `;
 
@@ -117,6 +119,19 @@ function metadata(content: string, filename: string): { title: string; summary: 
   return { title, summary };
 }
 
+function countWords(content: string): number {
+  const plain = content
+    .replace(/^---[\s\S]*?---\s*/, "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/<[^>]+>/g, " ");
+  const cjkCount = plain.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
+  const latinCount = plain.match(/[\p{Letter}\p{Number}]+/gu)?.filter((word) => !/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(word)).length ?? 0;
+  return cjkCount + latinCount;
+}
+
 export function renderMarkdown(content: string): string {
   const mathFragments = new Map<string, string>();
   const markerPrefix = `katex-${randomUUID()}`;
@@ -163,10 +178,10 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
   const activePaths = new Set<string>();
   let changed = 0;
 
-  const previous = db.prepare("SELECT content_hash AS hash, markdown FROM documents WHERE path = ?");
+  const previous = db.prepare("SELECT content_hash AS hash, markdown, word_count AS wordCount FROM documents WHERE path = ?");
   const upsert = db.prepare(`
-    INSERT INTO documents (path, slug, title, summary, content_hash, markdown, html, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO documents (path, slug, title, summary, content_hash, markdown, html, word_count, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(path) DO UPDATE SET
       slug = excluded.slug,
       title = excluded.title,
@@ -174,6 +189,7 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
       content_hash = excluded.content_hash,
       markdown = excluded.markdown,
       html = excluded.html,
+      word_count = excluded.word_count,
       updated_at = excluded.updated_at,
       status = 'active'
   `);
@@ -186,12 +202,12 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
       activePaths.add(path);
       const content = readFileSync(absolutePath, "utf8");
       const hash = createHash("sha256").update(`filename-title-katex-v2\0${content}`).digest("hex");
-      const old = previous.get(path) as { hash: string; markdown: string } | undefined;
-      if (old?.hash === hash && old.markdown === content) continue;
+      const old = previous.get(path) as { hash: string; markdown: string; wordCount: number } | undefined;
+      if (old?.hash === hash && old.markdown === content && old.wordCount > 0) continue;
       const filename = basename(path, extname(path));
       const { title, summary } = metadata(content, filename);
       const html = renderMarkdown(content);
-      upsert.run(path, slugFor(path), title, summary, hash, content, html, statSync(absolutePath).mtime.toISOString());
+      upsert.run(path, slugFor(path), title, summary, hash, content, html, countWords(content), statSync(absolutePath).mtime.toISOString());
       changed += 1;
     }
 

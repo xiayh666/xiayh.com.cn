@@ -9,7 +9,7 @@ import { NewArticlePage } from "./ArticleEditor";
 const note = {
   id: 7, path: "ops/network.md", slug: "ops/network", title: "Network", summary: "", type: "markdown",
   visibility: "private", published: false, pinned: false, status: "active", updatedAt: "2026-06-26T00:00:00Z",
-  publishedAt: "2026-06-26T00:00:00Z", viewCount: 0, previewPath: "",
+  publishedAt: "2026-06-26T00:00:00Z", viewCount: 0, wordCount: 1200, previewPath: "",
 };
 
 function renderWithProviders(ui: React.ReactElement) {

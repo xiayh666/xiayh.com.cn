@@ -7,22 +7,24 @@ import { WelcomePage } from "./WelcomePage";
 const recentNote: NoteSummary = {
   id: 1, path: "math.md", slug: "math", title: "Math", summary: "", type: "markdown",
   visibility: "public", published: true, pinned: false, status: "active",
-  updatedAt: "2026-06-30T00:00:00.000Z", publishedAt: "2026-06-30T00:00:00.000Z", viewCount: 0, previewPath: "",
+  updatedAt: "2026-06-30T00:00:00.000Z", publishedAt: "2026-06-30T00:00:00.000Z", viewCount: 0, wordCount: 1200, previewPath: "",
 };
 
 describe("WelcomePage", () => {
   it("shows the blog archive in the workspace welcome page", () => {
-    const { container } = render(<MemoryRouter><WelcomePage /></MemoryRouter>);
+    const { container } = render(<MemoryRouter><WelcomePage initialNotes={[recentNote]} /></MemoryRouter>);
     expect(screen.getByRole("region", { name: "博客概览" })).toBeInTheDocument();
     expect(screen.getByText("HOME / BLOG")).toBeInTheDocument();
     expect(screen.getByText("MODULE INDEX.")).toBeInTheDocument();
+    expect(screen.getByLabelText("最近十二个月文章发布频率热力图")).toBeInTheDocument();
+    expect(screen.getByText("1,200 WORDS / LAST 12 MONTHS")).toBeInTheDocument();
     expect(container.querySelector('[data-welcome-mode="workspace"]')).toBeInTheDocument();
     expect(container.querySelector("[data-welcome-environment]")).not.toBeInTheDocument();
   });
 
   it("keeps the dashboard entry in fullscreen intro mode", () => {
     const { container } = render(<MemoryRouter><WelcomePage intro /></MemoryRouter>);
-    expect(screen.getByRole("button", { name: "进入工作区" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "进入工作区" })).not.toBeInTheDocument();
     expect(screen.getByText("HOME / INDEX")).toBeInTheDocument();
     expect(screen.getByText("MODULE INDEX.")).toBeInTheDocument();
     expect(container.querySelector('[data-welcome-mode="homepage"]')).toBeInTheDocument();

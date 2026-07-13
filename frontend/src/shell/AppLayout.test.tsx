@@ -12,12 +12,12 @@ const summaries: NoteSummary[] = [
   {
     id: 1, path: "one.md", slug: "one", title: "One", summary: "First", type: "markdown",
     visibility: "public", published: true, pinned: false, status: "active",
-    updatedAt: "2026-06-29T00:00:00.000Z", publishedAt: "2026-06-29T00:00:00.000Z", viewCount: 4, previewPath: "",
+    updatedAt: "2026-06-29T00:00:00.000Z", publishedAt: "2026-06-29T00:00:00.000Z", viewCount: 4, wordCount: 1200, previewPath: "",
   },
   {
     id: 2, path: "two.md", slug: "two", title: "Two", summary: "Second", type: "markdown",
     visibility: "public", published: true, pinned: false, status: "active",
-    updatedAt: "2026-06-29T00:00:00.000Z", publishedAt: "2026-06-29T00:00:00.000Z", viewCount: 8, previewPath: "",
+    updatedAt: "2026-06-29T00:00:00.000Z", publishedAt: "2026-06-29T00:00:00.000Z", viewCount: 8, wordCount: 1200, previewPath: "",
   },
 ];
 

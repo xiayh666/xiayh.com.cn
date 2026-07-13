@@ -354,7 +354,6 @@ export function AppLayout() {
       ) : null}
       <header className={styles.titlebar}>
         <div className={styles.titlebarStart}>
-          <Command className={styles.brandIcon} />
           <TopMenu menus={menuDefinitions} />
         </div>
         <div className={styles.titlebarCenter}>
