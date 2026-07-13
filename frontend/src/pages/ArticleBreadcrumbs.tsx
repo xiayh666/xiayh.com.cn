@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, FileText, Folder, Hash } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import type { NoteSummary } from "../api";
 import styles from "./ArticleBreadcrumbs.module.css";
@@ -18,12 +18,14 @@ export function ArticleBreadcrumbs({
   headings,
   activeHeadingId,
   onSelectHeading,
+  actions,
 }: {
   path: string;
   notes: NoteSummary[];
   headings: ArticleHeading[];
   activeHeadingId: string;
   onSelectHeading: (id: string) => void;
+  actions?: ReactNode;
 }) {
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -93,6 +95,7 @@ export function ArticleBreadcrumbs({
           </button>
         </span>
       ) : null}
+      {actions ? <span className={styles.actions}>{actions}</span> : null}
 
       {picker ? (
         <div className={styles.picker} style={{ left: Math.min(picker.left, 420) }} role="menu">

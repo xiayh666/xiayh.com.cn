@@ -70,6 +70,10 @@
 .action { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-left: 2px solid transparent; color: hsl(var(--muted)); transition: color 120ms, background 120ms; }
 .action:hover { color: hsl(var(--ink)); }
 .action svg { width: 1.5rem; height: 1.5rem; }
+.activityAvatar { width: 1.8rem; height: 1.8rem; border: 1px solid hsl(var(--accent)); object-fit: cover; }
+.paneHeaderAction { display: grid; width: 1.5rem; height: 1.5rem; margin-left: auto; place-items: center; border: 0; background: transparent; color: hsl(var(--muted)); cursor: pointer; }
+.paneHeaderAction:hover { background: hsl(var(--ink) / 0.08); color: hsl(var(--ink)); }
+.paneHeaderAction svg { width: 0.9rem; }
 .actionActive { border-left-color: hsl(var(--accent)); background: color-mix(in srgb, hsl(var(--ctp-mauve)) 9%, transparent); color: hsl(var(--ink)); }
 .activitySpacer { margin-top: auto; }
 .sidebar { display: flex; min-width: 180px; min-height: 0; grid-column: 2; grid-row: 1; flex-direction: column; overflow: hidden; background: hsl(var(--sidebar)); }

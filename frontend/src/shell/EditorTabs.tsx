@@ -1,4 +1,4 @@
-import { Command, FileText, LogIn, Settings, X } from "lucide-react";
+import { Command, FilePlus2, FileText, LogIn, Settings, X } from "lucide-react";
 import { useEffect, useRef, useState, type MouseEvent, type WheelEvent } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +6,7 @@ import styles from "./AppLayout.module.css";
 
 export type EditorTabModel = {
   id: string;
-  kind: "welcome" | "login" | "settings" | "article";
+  kind: "welcome" | "login" | "settings" | "article" | "new-article";
   label: string;
   href: string;
   detail?: string;
@@ -102,6 +102,8 @@ export function EditorTabs({ tabs, activeId, onActivate, onClose, onCloseOthers,
               ? <LogIn />
             : tab.kind === "settings"
               ? <Settings />
+            : tab.kind === "new-article"
+              ? <FilePlus2 className={styles.accentIcon} />
               : <FileText className={styles.accentIcon} />;
           return (
             <div

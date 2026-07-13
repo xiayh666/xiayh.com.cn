@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, ChevronLeft, ChevronRight, Clock3, Command, FileText, Hash, ListTree, LogIn, Maximize2, Moon, MoreHorizontal, Search, Settings, ShieldCheck, SplitSquareHorizontal, Sun, UserRound } from "lucide-react";
+import { Bell, ChevronDown, ChevronLeft, ChevronRight, Clock3, Command, FilePlus2, FileText, Hash, ListTree, LogIn, Maximize2, Moon, MoreHorizontal, Search, Settings, ShieldCheck, SplitSquareHorizontal, Sun, UserRound } from "lucide-react";
 import { api, type NoteSummary } from "../api";
 import { AdminPage } from "../pages/AdminPage";
+import { NewArticlePage } from "../pages/ArticleEditor";
 import { NotePage, scrollArticleHeading } from "../pages/NotePage";
 import { WelcomePage } from "../pages/WelcomePage";
 import { CommandPalette } from "./CommandPalette";
@@ -197,6 +198,8 @@ export function AppLayout() {
       tab = { id: "login", kind: "login", label: "Login", href: "/login", kept: true };
     } else if (location.pathname === "/settings") {
       tab = { id: "settings", kind: "settings", label: "Settings", href: "/settings", kept: true };
+    } else if (location.pathname === "/new") {
+      tab = { id: "new-article", kind: "new-article", label: "Untitled.md", href: "/new", kept: true };
     } else if (activeNote) {
       tab = {
         id: `article:${activeNote.slug}`,
@@ -378,14 +381,14 @@ export function AppLayout() {
           <button className={`${styles.action}${sidebarView === "search" ? ` ${styles.actionActive}` : ""}`} onClick={() => setSidebarView("search")} title="Search"><Search /></button>
           <button className={`${styles.action}${sidebarView === "outline" ? ` ${styles.actionActive}` : ""}`} onClick={() => setSidebarView("outline")} title="Outline"><ListTree /></button>
           <div className={styles.activitySpacer} />
-          <button className={`${styles.action}${location.pathname === "/login" ? ` ${styles.actionActive}` : ""}`} onClick={() => navigate("/login")} title="Login"><LogIn /></button>
+          <button className={`${styles.action}${location.pathname === "/login" ? ` ${styles.actionActive}` : ""}`} onClick={() => navigate("/login")} title={session.data?.authenticated ? "Owner profile and article management" : "Login"}>{session.data?.authenticated ? <img className={styles.activityAvatar} src={import.meta.env.VITE_PROFILE_AVATAR?.trim() || "https://github.com/xiayh666.png?size=96"} alt="Owner avatar" /> : <LogIn />}</button>
           <button className={`${styles.action}${location.pathname === "/settings" ? ` ${styles.actionActive}` : ""}`} onClick={() => navigate("/settings")} title="Settings"><Settings /></button>
         </aside>
 
         <aside className={styles.sidebar}>
           <div className={styles.paneHeader}>
             <span>{sidebarView === "explorer" ? "Explorer" : sidebarView === "search" ? "Search" : "Outline"}</span>
-            <MoreHorizontal />
+            {sidebarView === "explorer" && session.data?.authenticated ? <button type="button" className={styles.paneHeaderAction} onClick={() => navigate("/new")} title="New article"><FilePlus2 /></button> : <MoreHorizontal />}
           </div>
           {sidebarView === "explorer" ? (
           <>
@@ -702,6 +705,7 @@ function EditorTabContent({ tab, reportStatus, onBrowse }: {
   if (tab.kind === "welcome") return <WelcomePage workspace onBrowse={onBrowse} />;
   if (tab.kind === "login") return <AdminPage view="login" />;
   if (tab.kind === "settings") return <AdminPage view="settings" />;
+  if (tab.kind === "new-article") return <NewArticlePage />;
   const slug = decodeURIComponent(tab.href.replace(/^\/notes\//, ""));
   return <NotePage slug={slug} reportStatus={reportStatus} />;
 }

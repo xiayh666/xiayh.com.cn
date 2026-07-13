@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { FileText } from "lucide-react";
+import { Edit3, FileText } from "lucide-react";
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useSetEditorStatus } from "../shell/EditorStatusContext";
 import { ArticleBreadcrumbs, type ArticleHeading } from "./ArticleBreadcrumbs";
+import { ArticleEditor } from "./ArticleEditor";
 import styles from "./NotePage.module.css";
 
 const MarkdownReader = lazy(() => import("./MarkdownReader").then((module) => ({ default: module.MarkdownReader })));
@@ -46,6 +47,8 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
   const currentSlugRef = useRef(slug);
   const suppressScrollSaveRef = useRef(true);
   const setEditorStatus = useSetEditorStatus();
+  const session = useQuery({ queryKey: ["session"], queryFn: api.session });
+  const [editing, setEditing] = useState(false);
 
   const note = noteQuery.data;
   const summary = notesQuery.data?.items.find((item) => item.slug === slug);
@@ -173,6 +176,8 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
 
   if (noteQuery.isError) return <div className={styles.message}>Note not found.</div>;
 
+  if (editing && note) return <ArticleEditor note={note} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />;
+
   return (
     <article className={styles.page} aria-busy={!note}>
       <ArticleBreadcrumbs
@@ -181,6 +186,7 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
         headings={headings}
         activeHeadingId={activeHeadingId}
         onSelectHeading={selectHeading}
+        actions={session.data?.authenticated ? <button type="button" onClick={() => setEditing(true)}><Edit3 /> Edit</button> : null}
       />
       <div
         ref={scrollerRef}

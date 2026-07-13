@@ -2,7 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { AdminPage } from "./AdminPage";
+import { NewArticlePage } from "./ArticleEditor";
 
 const note = {
   id: 7, path: "ops/network.md", slug: "ops/network", title: "Network", summary: "", type: "markdown",
@@ -43,7 +45,7 @@ describe("AdminPage", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/admin/notes/7/visibility", expect.objectContaining({ method: "POST", body: JSON.stringify({ visibility: "public", published: true }) })));
   });
 
-  // 验证发布工作区会把路径、Markdown 和发布元数据提交到创建接口。
+  // 验证 Explorer 新建页会把路径、Markdown 和发布元数据提交到创建接口。
   it("creates a repository-backed markdown article", async () => {
     const fetchMock = vi.fn().mockImplementation(async (input: string) => {
       if (input === "/api/session") return response({ authenticated: true, username: "admin" });
@@ -53,8 +55,7 @@ describe("AdminPage", () => {
       return response({ ok: true });
     });
     vi.stubGlobal("fetch", fetchMock);
-    renderWithProviders(<AdminPage />);
-    await userEvent.click(await screen.findByRole("button", { name: "publish" }));
+    renderWithProviders(<MemoryRouter><NewArticlePage /></MemoryRouter>);
     await userEvent.type(screen.getByPlaceholderText("section/article-name.md"), "cpp/new.md");
     await userEvent.click(await screen.findByRole("button", { name: /Source/ }));
     await userEvent.type(screen.getByLabelText("Markdown content"), "# New article");

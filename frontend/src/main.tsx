@@ -8,6 +8,7 @@ import { AppLayout } from "./shell/AppLayout";
 import { WelcomePage } from "./pages/WelcomePage";
 import { NotePage } from "./pages/NotePage";
 import { AdminPage } from "./pages/AdminPage";
+import { NewArticlePage } from "./pages/ArticleEditor";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       { path: "notes/*", element: <NotePage /> },
       { path: "login", element: <AdminPage view="login" /> },
       { path: "settings", element: <AdminPage view="settings" /> },
+      { path: "new", element: <NewArticlePage /> },
       { path: "admin", element: <Navigate to="/settings" replace /> },
     ],
   },

@@ -13,6 +13,7 @@ export type NoteSummary = {
   publishedAt: string;
   viewCount: number;
   previewPath: string;
+  tags?: string[];
 };
 
 export type Note = NoteSummary & {

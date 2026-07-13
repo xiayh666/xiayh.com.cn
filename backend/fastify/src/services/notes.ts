@@ -21,13 +21,15 @@ type DocumentRow = {
   previewPath: string;
   publishedAt: string;
   viewCount: number;
+  tags: string;
   html?: string;
   markdown?: string;
 };
 
-export type Note = Omit<DocumentRow, "published" | "pinned"> & {
+export type Note = Omit<DocumentRow, "published" | "pinned" | "tags"> & {
   published: boolean;
   pinned: boolean;
+  tags: string[];
 };
 
 const summaryColumns = `
@@ -36,10 +38,11 @@ const summaryColumns = `
   preview_path AS previewPath,
   COALESCE(published_at, updated_at) AS publishedAt,
   view_count AS viewCount
+  , COALESCE((SELECT json_group_array(t.name) FROM document_tags dt JOIN tags t ON t.id = dt.tag_id WHERE dt.document_id = documents.id), '[]') AS tags
 `;
 
 function mapNote(row: DocumentRow): Note {
-  return { ...row, published: Boolean(row.published), pinned: Boolean(row.pinned) };
+  return { ...row, published: Boolean(row.published), pinned: Boolean(row.pinned), tags: JSON.parse(row.tags) as string[] };
 }
 
 function visibilityClause(isAdmin: boolean): string {

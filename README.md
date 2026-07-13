@@ -10,7 +10,7 @@
 backend/fastify/  当前使用的 TypeScript/Fastify API 服务
 backend/src/      预留的 C++/Boost.Beast 后端迁移实现
 frontend/         React + Vite 静态网站
-deploy/           Caddy 与 systemd 部署模板
+deploy/           Nginx、Caddy 与 systemd 部署模板
 data/             本地 SQLite、媒体文件和笔记仓库，不提交到 Git
 ```
 
@@ -108,7 +108,24 @@ curl -X POST http://127.0.0.1:8080/api/admin/sync \
 - 将 `deploy/blog.env` 复制到 `/opt/xiayh-personal-site/blog.env`，限制服务用户的文件权限，并替换所有密钥。
 - 使用 `pnpm --dir /opt/xiayh-personal-site/backend install --prod --frozen-lockfile` 安装生产依赖。
 - 安装 `deploy/blog-api.service`、`deploy/blog-sync.service` 和 `deploy/blog-sync.timer`。
-- 确认 `deploy/Caddyfile` 使用实际域名。
+- Nginx 部署时，确认 `deploy/nginx.conf` 中的域名和部署路径正确，然后安装并启用配置：
+
+  ```bash
+  sudo cp deploy/nginx.conf /etc/nginx/sites-available/xiayh-personal-site
+  sudo ln -s /etc/nginx/sites-available/xiayh-personal-site /etc/nginx/sites-enabled/xiayh-personal-site
+  sudo nginx -t
+  sudo systemctl reload nginx
+  ```
+
+- 域名解析到服务器且 HTTP 可访问后，签发 HTTPS 证书。生产环境的登录 Cookie 设置了 `Secure`，因此管理功能必须通过 HTTPS 使用：
+
+  ```bash
+  sudo certbot --nginx -d xiayh.com.cn -d www.xiayh.com.cn
+  sudo nginx -t
+  sudo systemctl reload nginx
+  ```
+
+- 如果继续使用 Caddy，则确认 `deploy/Caddyfile` 使用实际域名；Nginx 与 Caddy 不应同时监听 80/443 端口。
 - 不要直接暴露 `data/notes`、`.git` 或 `.excalidraw` 源文件。
 
 ## 当前限制

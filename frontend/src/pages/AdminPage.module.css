@@ -29,6 +29,7 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .adminHeader > div > span:last-child { display: flex; flex-direction: column; }
 .adminHeader small { color: hsl(var(--muted)); font-family: "AudioLink Mono", monospace; font-size: 0.55rem; letter-spacing: 0.08em; }
 .adminHeader strong { font-size: 0.82rem; }
+.managementTitle { color: hsl(var(--muted)); font: 0.62rem "AudioLink Mono", monospace; letter-spacing: 0.08em; }
 .adminHeader nav { display: flex; align-self: stretch; }
 .adminHeader nav button { min-width: 5.5rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: hsl(var(--muted)); font-size: 0.72rem; text-transform: uppercase; cursor: pointer; }
 .adminHeader nav button:hover, .adminHeader .activeNav { border-bottom-color: hsl(var(--accent)); color: hsl(var(--ink)); }
@@ -49,6 +50,9 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .editorToolbar .publishToggle { height: 2rem; flex-direction: row; align-items: center; }
 .publishToggle input { width: 1rem; height: 1rem; }
 .editorToolbar .primaryButton { margin: 0; }
+.editorActions { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; }
+.editorActions > button { display: inline-flex; height: 2rem; align-items: center; gap: 0.35rem; border: 1px solid hsl(var(--line)); padding: 0 0.65rem; background: hsl(var(--panel)); color: hsl(var(--ink)); cursor: pointer; }
+.editorActions svg { width: 0.85rem; }
 .markdownEditor { display: flex; min-height: 0; flex: 1; flex-direction: column; border: 1px solid hsl(var(--line)); border-top: 0; background: hsl(var(--surface)); }
 .editorLoading { display: grid; min-height: 0; flex: 1; place-items: center; border: 1px solid hsl(var(--line)); color: hsl(var(--muted)); font: 0.68rem "AudioLink Mono", monospace; }
 .markdownModebar { display: flex; min-height: 2.25rem; flex: 0 0 auto; align-items: center; justify-content: space-between; border-bottom: 1px solid hsl(var(--line)); padding-left: 0.65rem; background: hsl(var(--panel)); color: hsl(var(--muted)); font: 0.58rem "AudioLink Mono", monospace; letter-spacing: 0.04em; }
@@ -82,7 +86,8 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .manageToolbar label svg { width: 0.9rem; color: hsl(var(--muted)); }
 .manageToolbar input { width: 100%; }
 .noteList { min-height: 0; overflow: auto; border-top: 1px solid hsl(var(--line)); }
-.noteRow { display: grid; min-width: 48rem; grid-template-columns: minmax(12rem, 1fr) 4rem 7rem 7rem 7rem; align-items: center; gap: 0.6rem; border-bottom: 1px solid hsl(var(--line)); padding: 0.55rem 0.65rem; }
+.noteRow { display: grid; min-width: 58rem; grid-template-columns: minmax(12rem, 1fr) 4rem minmax(9rem, 0.8fr) 7rem 7rem 5rem; align-items: center; gap: 0.6rem; border-bottom: 1px solid hsl(var(--line)); padding: 0.55rem 0.65rem; }
+.tagInput { height: 2rem; min-width: 0; border: 1px solid hsl(var(--line)); padding: 0 0.5rem; background: hsl(var(--input-bg)); color: hsl(var(--ink)); font: 0.65rem "AudioLink Mono", monospace; }
 .noteRow:hover { background: hsl(var(--ink) / 0.04); }
 .noteIdentity { display: flex; min-width: 0; flex-direction: column; }
 .noteIdentity strong, .noteIdentity span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
