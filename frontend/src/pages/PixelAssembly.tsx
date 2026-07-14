@@ -135,7 +135,7 @@ export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = 
       const floatY = reducedMotion ? 0 : Math.sin(time * 0.00105) * 18;
 
       let remainingDistance = 0;
-      points.forEach((point, index) => {
+      points.forEach((point) => {
         point.x += (point.tx - point.x) * (reducedMotion ? 1 : 0.045);
         point.y += (point.ty - point.y) * (reducedMotion ? 1 : 0.045);
         point.z += (point.tz - point.z) * (reducedMotion ? 1 : 0.045);

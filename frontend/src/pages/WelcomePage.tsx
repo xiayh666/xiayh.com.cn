@@ -157,6 +157,7 @@ type WelcomePageProps = {
   intro?: boolean;
   workspace?: boolean;
   onBrowse?: () => void;
+  onHome?: () => void;
   onOpenNote?: (slug: string) => void;
   initialNotes?: NoteSummary[];
 };
@@ -172,9 +173,10 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   const [modelRotationEnabled, setModelRotationEnabled] = useState(!intro);
   const [notes, setNotes] = useState<NoteSummary[]>(initialNotes);
   const [stats, setStats] = useState<SiteStats>();
-  const [updatesPulse, setUpdatesPulse] = useState(0);
+  const [updatesPulse] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const pageRef = useRef<HTMLElement>(null);
   const updatesRef = useRef<HTMLElement>(null);
   const blogContext = leaving || !intro;
   const openExternal = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
@@ -195,9 +197,92 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
     if (initialNotes.length) setNotes(initialNotes);
   }, [initialNotes]);
 
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+    const media = window.matchMedia?.("(max-width: 820px)");
+    if (!media?.matches) return;
+
+    let locked = false;
+    let startY = 0;
+    let moveY = 0;
+    let hasMoved = false;
+
+    const getTargets = () => Array.from(page.querySelectorAll<HTMLElement>("[data-mobile-snap='true']"))
+      .sort((left, right) => left.offsetTop - right.offsetTop);
+
+    const getCurrentIndex = (targets: HTMLElement[]) => {
+      const top = page.scrollTop;
+      let index = 0;
+      let distance = Number.POSITIVE_INFINITY;
+      targets.forEach((target, candidate) => {
+        const nextDistance = Math.abs(target.offsetTop - top);
+        if (nextDistance < distance) {
+          distance = nextDistance;
+          index = candidate;
+        }
+      });
+      return index;
+    };
+
+    const snapBy = (direction: 1 | -1) => {
+      if (locked) return;
+      const targets = getTargets();
+      if (targets.length < 2) return;
+      const current = getCurrentIndex(targets);
+      const next = Math.max(0, Math.min(targets.length - 1, current + direction));
+      if (next === current) return;
+      locked = true;
+      page.scrollTo({ top: targets[next].offsetTop, behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      window.setTimeout(() => { locked = false; }, 620);
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (!media.matches || Math.abs(event.deltaY) < 12) return;
+      event.preventDefault();
+      snapBy(event.deltaY > 0 ? 1 : -1);
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      startY = event.touches[0]?.clientY ?? 0;
+      moveY = startY;
+      hasMoved = false;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      moveY = event.touches[0]?.clientY ?? moveY;
+      if (Math.abs(moveY - startY) < 10) return;
+      hasMoved = true;
+      event.preventDefault();
+    };
+
+    const onTouchEnd = () => {
+      if (!hasMoved) return;
+      const delta = startY - moveY;
+      if (Math.abs(delta) < 36) return;
+      snapBy(delta > 0 ? 1 : -1);
+    };
+
+    page.addEventListener("wheel", onWheel, { passive: false });
+    page.addEventListener("touchstart", onTouchStart, { passive: true });
+    page.addEventListener("touchmove", onTouchMove, { passive: false });
+    page.addEventListener("touchend", onTouchEnd);
+
+    return () => {
+      page.removeEventListener("wheel", onWheel);
+      page.removeEventListener("touchstart", onTouchStart);
+      page.removeEventListener("touchmove", onTouchMove);
+      page.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
   const runAfterIntro = (action: () => void) => {
     if (leaving) return;
-    if (!intro || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    if (
+      !intro
+      || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      || window.matchMedia?.("(max-width: 820px)").matches
+    ) {
       action();
       return;
     }
@@ -248,6 +333,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
 
   return (
     <section
+      ref={pageRef}
       className={`${styles.page} ${intro ? styles.introActive : ""} ${workspaceMode ? styles.workspacePage : ""} ${leaving ? styles.pageLeaving : ""}`}
       data-welcome-mode={workspaceMode ? "workspace" : "homepage"}
     >
@@ -284,7 +370,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
         <div className={styles.topRule} aria-hidden="true" />
         <div className={styles.focusGuide} aria-hidden="true"><span /><i /></div>
 
-        <section className={`${styles.quadrant} ${styles.introQuadrant}`}>
+        <section className={`${styles.quadrant} ${styles.introQuadrant}`} data-mobile-snap="true">
           <div className={styles.pageIndex} aria-hidden="true">
             <b>{blogContext ? "01" : "00"}</b>
             <span key={blogContext ? "blog" : "home"} className={styles.pageIndexRoute}>{blogContext ? "HOME / BLOG" : "HOME / INDEX"}</span>
@@ -304,7 +390,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
           </header>
         </section>
 
-        <section className={`${styles.quadrant} ${styles.clockQuadrant}`}>
+        <section className={`${styles.quadrant} ${styles.clockQuadrant}`} data-mobile-snap="true">
           <section className={styles.identityStrip} aria-label="站点数据与个人信息">
             <div className={styles.siteStatsBlock}>
               <span className={styles.stripLabel}>SITE DATA.</span>
@@ -396,7 +482,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
           </div>
         </section>
 
-        <section className={`${styles.quadrant} ${styles.modelArea}`}>
+        <section className={`${styles.quadrant} ${styles.modelArea}`} data-mobile-snap="true">
           {intro ? (
             <>
           <div className={styles.modelDisplay}>

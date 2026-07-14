@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, LogIn, LogOut, RefreshCw, Save, Search, Trash2, UserRound } from "lucide-react";
+import { Eye, LogIn, LogOut, RefreshCw, Save, Search, Settings, ShieldCheck, SlidersHorizontal, Trash2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { api, type NoteSummary } from "../api";
 import styles from "./AdminPage.module.css";
@@ -34,6 +34,8 @@ export function AdminPage({ view = "settings" }: { view?: "login" | "settings" }
     onSuccess: refreshAdminData,
   });
 
+  if (view === "settings") return <SettingsView authenticated={session.data?.authenticated === true} loading={session.isLoading} username={session.data?.username ?? null} />;
+
   if (session.isLoading) return <section className={styles.loadingState}>Checking session…</section>;
   if (!session.data?.authenticated) {
     return (
@@ -66,6 +68,31 @@ export function AdminPage({ view = "settings" }: { view?: "login" | "settings" }
           {notes.isLoading ? <p className={styles.emptyMessage}>Loading documents…</p> : null}
           {!notes.isLoading && filteredNotes.length === 0 ? <p className={styles.emptyMessage}>No matching documents.</p> : null}
         </section>
+    </section>
+  );
+}
+
+function SettingsView({ authenticated, loading, username }: { authenticated: boolean; loading: boolean; username: string | null }) {
+  return (
+    <section className={styles.settingsPage}>
+      <header className={styles.settingsHeader}>
+        <span><Settings /> SETTINGS</span>
+        <small>READER WORKSPACE / LOCAL PREFERENCES</small>
+      </header>
+      <div className={styles.settingsGrid}>
+        <article className={styles.settingsCard}>
+          <header><SlidersHorizontal /><span>Layout</span></header>
+          <p>右上角 Customize Layout 控制 Activity Bar、Side Bar 和 Status Bar。这里保留为运行时布局偏好，不和登录入口混在一起。</p>
+        </article>
+        <article className={styles.settingsCard}>
+          <header><ShieldCheck /><span>Owner Session</span></header>
+          <p>{loading ? "Checking session…" : authenticated ? `Authenticated as ${username ?? "owner"}. 文章管理请从 Login / Owner 入口进入。` : "Not authenticated. 登录只通过 Login 入口进行。"}</p>
+        </article>
+        <article className={styles.settingsCard}>
+          <header><UserRound /><span>Display</span></header>
+          <p>界面使用固定浅色 Catppuccin Latte 视觉系统；不再提供夜间模式切换。</p>
+        </article>
+      </div>
     </section>
   );
 }

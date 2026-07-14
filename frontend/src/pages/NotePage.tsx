@@ -8,7 +8,10 @@ import { ArticleBreadcrumbs, type ArticleHeading } from "./ArticleBreadcrumbs";
 import { ArticleEditor } from "./ArticleEditor";
 import styles from "./NotePage.module.css";
 
-const MarkdownReader = lazy(() => import("./MarkdownReader").then((module) => ({ default: module.MarkdownReader })));
+const loadMarkdownReader = () => import("./MarkdownReader").then((module) => ({ default: module.MarkdownReader }));
+const MarkdownReader = lazy(loadMarkdownReader);
+export const preloadMarkdownReader = () => { void loadMarkdownReader(); };
+
 const articleScrollPositions = new Map<string, number>();
 const scrollPositionKey = (slug: string) => `article-scroll:${slug}`;
 
@@ -178,6 +181,8 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
 
   if (editing && note) return <ArticleEditor note={note} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />;
 
+  const canEdit = session.data?.authenticated;
+
   return (
     <article className={styles.page} aria-busy={!note}>
       <ArticleBreadcrumbs
@@ -186,8 +191,9 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
         headings={headings}
         activeHeadingId={activeHeadingId}
         onSelectHeading={selectHeading}
-        actions={session.data?.authenticated ? <button type="button" onClick={() => setEditing(true)}><Edit3 /> Edit</button> : null}
+        actions={canEdit ? <button type="button" onClick={() => setEditing(true)}><Edit3 /> Edit</button> : null}
       />
+      {canEdit ? <div className={styles.mobileArticleActions}><button type="button" onClick={() => setEditing(true)}><Edit3 /> Edit</button></div> : null}
       <div
         ref={scrollerRef}
         className={styles.scroller}
@@ -198,9 +204,9 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
       >
         {note ? (
           <Suspense fallback={<LoadingDocument pendingPath={pendingPath} />}>
-          <div key={note.slug} ref={articleRef} className={`${styles.article} ${styles.articleEnter}`} onClick={handleArticleNavigation}>
+            <div key={note.slug} ref={articleRef} className={`${styles.article} ${styles.articleEnter}`} onClick={handleArticleNavigation}>
               <MarkdownReader markdown={note.markdown} onReady={() => handleReaderReady(note.slug)} />
-          </div>
+            </div>
           </Suspense>
         ) : (
           <LoadingDocument pendingPath={pendingPath} />

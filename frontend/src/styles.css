@@ -1,3 +1,83 @@
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-Light.ttf?v=20260715c") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-Regular.ttf?v=20260715c") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-Medium.ttf?v=20260715c") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-MediumItalic.ttf?v=20260715c") format("truetype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-Demi.ttf?v=20260715c") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-DemiItalic.ttf?v=20260715c") format("truetype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-Bold.ttf?v=20260715c") format("truetype");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLink Mono";
+  src: url("/fonts/AudioLinkMono-BoldItalic.ttf?v=20260715c") format("truetype");
+  font-weight: 700 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLinkConsole";
+  src: url("/fonts/AudioLinkMono-Regular.ttf?v=20260715c") format("truetype");
+  font-weight: 300 699;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AudioLinkConsole";
+  src: url("/fonts/AudioLinkMono-Bold.ttf?v=20260715c") format("truetype");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --ctp-rosewater: 11 59% 67%;
   --ctp-flamingo: 0 60% 67%;
@@ -47,28 +127,10 @@
   --scrollbar-slider: #64646466;
   --scrollbar-slider-hover: #646464b3;
   --scrollbar-slider-active: #00000099;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-ui-mono: "AudioLink Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-code-mono: "AudioLinkConsole", "AudioLink Mono", "Courier New", monospace;
+  font-family: var(--font-ui-mono);
   color-scheme: light;
-}
-
-:root.dark {
-  --surface: 220 13% 18%;
-  --panel: 220 13% 14%;
-  --ink: 210 20% 92%;
-  --muted: 215 9% 64%;
-  --line: 220 10% 24%;
-  --accent: 204 100% 40%;
-  --warm: 37 92% 55%;
-  --titlebar: 220 13% 12%;
-  --activity: 220 13% 16%;
-  --sidebar: 220 13% 15%;
-  --editor: 220 13% 18%;
-  --terminal: 220 13% 16%;
-  --status: 204 100% 32%;
-  --scrollbar-slider: #79797966;
-  --scrollbar-slider-hover: #646464b3;
-  --scrollbar-slider-active: #bfbfbf66;
-  color-scheme: dark;
 }
 
 *,
@@ -153,11 +215,13 @@ body {
   min-width: 320px;
   background: hsl(var(--surface));
   color: hsl(var(--ink));
+  font-family: var(--font-ui-mono);
 }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -172,7 +236,7 @@ a {
 
 .prose-view {
   color: hsl(var(--ink));
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-ui-mono);
 }
 
 .prose-view h1,
@@ -183,7 +247,7 @@ a {
 .prose-view h6 {
   margin-bottom: 0;
   padding: 2px 0;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-ui-mono);
   font-weight: 400;
 }
 

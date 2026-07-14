@@ -14,11 +14,32 @@ export function MarkdownReader({ markdown, onReady }: { markdown: string; onRead
   readyRef.current = onReady;
 
   useEffect(() => {
-    if (!rootRef.current) return;
+    const root = rootRef.current;
+    if (!root) return;
     let disposed = false;
     const measured = new WeakSet<Element>();
     const timers = new Set<number>();
+    const markReadonlyCodeMirror = (editor: HTMLElement) => {
+      const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+      editor.dataset.readonlyCodeMirror = "true";
+      editor.setAttribute("aria-readonly", "true");
+      if (isTouchDevice) editor.tabIndex = -1;
+      editor.querySelectorAll<HTMLElement>(".cm-content").forEach((content) => {
+        content.inputMode = "none";
+        content.setAttribute("inputmode", "none");
+        content.setAttribute("aria-readonly", "true");
+        content.setAttribute("autocomplete", "off");
+        content.setAttribute("autocorrect", "off");
+        content.setAttribute("autocapitalize", "off");
+        content.spellcheck = false;
+        if (isTouchDevice) {
+          content.contentEditable = "false";
+          content.tabIndex = -1;
+        }
+      });
+    };
     const measureCodeMirror = (editor: HTMLElement) => {
+      markReadonlyCodeMirror(editor);
       if (measured.has(editor)) return;
       const view = EditorView.findFromDOM(editor);
       if (!view) return;
@@ -26,7 +47,7 @@ export function MarkdownReader({ markdown, onReady }: { markdown: string; onRead
       const block = editor.closest<HTMLElement>(".milkdown-code-block");
       void (async () => {
         await (document.fonts?.ready ?? Promise.resolve());
-        if (rootRef.current?.closest("[data-editor-flip-face='back']")) {
+        if (root.closest("[data-editor-flip-face='back']")) {
           await new Promise<void>((resolve) => {
             const timer = window.setTimeout(() => { timers.delete(timer); resolve(); }, 460);
             timers.add(timer);
@@ -42,12 +63,12 @@ export function MarkdownReader({ markdown, onReady }: { markdown: string; onRead
       })();
     };
     const scanCodeMirrors = () => {
-      rootRef.current?.querySelectorAll<HTMLElement>(".cm-editor").forEach(measureCodeMirror);
+      root.querySelectorAll<HTMLElement>(".cm-editor").forEach(measureCodeMirror);
     };
     const observer = new MutationObserver(scanCodeMirrors);
-    observer.observe(rootRef.current, { childList: true, subtree: true });
+    observer.observe(root, { childList: true, subtree: true });
     const crepe = new Crepe({
-      root: rootRef.current,
+      root,
       defaultValue: markdown,
       features: {
         [Crepe.Feature.TopBar]: false,
@@ -74,7 +95,7 @@ export function MarkdownReader({ markdown, onReady }: { markdown: string; onRead
       timers.forEach((timer) => window.clearTimeout(timer));
       void crepe.destroy();
     };
-  }, [markdown]);
+  }, [handleCopy, markdown]);
 
   return <div ref={rootRef} className={editorStyles.markdownVisual} data-markdown-readonly="true" aria-label="Article content" />;
 }

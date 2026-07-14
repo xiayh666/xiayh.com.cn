@@ -47,7 +47,7 @@ function buildTree(notes: NoteSummary[]): TreeNode[] {
   return finalize(root);
 }
 
-export function ExplorerTree({ notes }: { notes: NoteSummary[] }) {
+export function ExplorerTree({ notes, onOpenNote }: { notes: NoteSummary[]; onOpenNote?: (href: string) => void }) {
   const tree = useMemo(() => buildTree(notes), [notes]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const location = useLocation();
@@ -94,7 +94,10 @@ export function ExplorerTree({ notes }: { notes: NoteSummary[] }) {
         className={`${styles.treeRow} ${styles.treeButton}${active ? ` ${styles.treeRowActive}` : ""}`}
         style={rowStyle}
         title={node.path}
-        onClick={() => navigate(href)}
+        onClick={() => {
+          if (onOpenNote) onOpenNote(href);
+          else navigate(href);
+        }}
         onPointerEnter={() => void queryClient.prefetchQuery({
           queryKey: ["note", node.note.slug],
           queryFn: ({ signal }) => api.note(node.note.slug, signal),

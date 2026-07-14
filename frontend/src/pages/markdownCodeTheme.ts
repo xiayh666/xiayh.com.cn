@@ -29,11 +29,11 @@ export const vscodeCodeTheme = [
       backgroundColor: "#eff1f5",
       fontSize: "20px",
     },
-    ".cm-content, .cm-gutterElement": {
-      fontFamily: '"AudioLinkConsole Nerd Font Mono", "AudioLink Mono", "Courier New", monospace',
+    ".cm-content": {
+      fontFamily: '"AudioLinkConsole", "AudioLink Mono", "Courier New", monospace',
       lineHeight: "1.5",
+      caretColor: "#dc8a78",
     },
-    ".cm-content": { caretColor: "#dc8a78" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#dc8a78" },
     "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
       backgroundColor: "#7c7f934d",

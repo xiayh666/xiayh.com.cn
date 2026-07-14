@@ -21,3 +21,9 @@
 .pickerList button svg { width: 0.9rem; height: 0.9rem; flex: 0 0 auto; }
 .folderIcon { color: hsl(var(--ctp-yellow)); }
 .fileIcon { color: hsl(var(--accent)); }
+
+@media (max-width: 820px) {
+  .breadcrumbs {
+    display: none;
+  }
+}

@@ -47,7 +47,9 @@ describe("AppLayout editor tabs", () => {
       </QueryClientProvider>,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: /One/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /博客/ }));
+    const explorer = await screen.findByRole("navigation", { name: "Article explorer" });
+    fireEvent.click(await within(explorer).findByRole("button", { name: "one.md" }));
     await screen.findByRole("heading", { name: "Article One" });
     expect(screen.getByRole("button", { name: "Close one.md" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Close Welcome" })).not.toBeInTheDocument();
@@ -80,7 +82,15 @@ describe("AppLayout editor tabs", () => {
       </QueryClientProvider>,
     );
 
-    fireEvent.click(screen.getAllByRole("button", { name: "进入工作区" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: /博客/ })[0]);
+
+    expect(screen.getByRole("button", { name: "Go Back" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Go Forward" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Customize Layout" }));
+    expect(screen.getByRole("menu", { name: "Customize Layout" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Reset Layout" }));
+    expect(screen.queryByRole("menu", { name: "Customize Layout" })).not.toBeInTheDocument();
 
     const explorerResizeHandle = screen.getByRole("separator", { name: "Resize Side Bar" });
     expect(explorerResizeHandle).toHaveAttribute("aria-valuenow", "300");
@@ -106,6 +116,7 @@ describe("AppLayout editor tabs", () => {
     let explorer = await screen.findByRole("navigation", { name: "Article explorer" });
     fireEvent.click(screen.getByTitle("Settings"));
     await screen.findByRole("button", { name: "Close Settings" });
+    expect(screen.getByText("SETTINGS")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close Welcome" })).toBeInTheDocument();
 
     fireEvent.click(await within(explorer).findByRole("button", { name: "one.md" }));
@@ -129,7 +140,7 @@ describe("AppLayout editor tabs", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close one.md" }));
     await screen.findByRole("heading", { name: "Article Two" });
     fireEvent.click(screen.getByRole("button", { name: "Close two.md" }));
-    await screen.findByText("Welcome back.");
+    await screen.findByText("SETTINGS");
     fireEvent.click(screen.getByRole("button", { name: "Close Settings" }));
     await waitFor(() => expect(screen.getByRole("region", { name: "博客概览" })).toBeInTheDocument());
 

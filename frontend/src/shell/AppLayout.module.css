@@ -1,8 +1,10 @@
-.shell { display: grid; height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: 34px minmax(0, 1fr) 22px; }
+.shell { --activitybar-width: 48px; --effective-sidebar-width: var(--sidebar-width, 300px); --statusbar-height: 22px; display: grid; height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: 34px minmax(0, 1fr) var(--statusbar-height); }
 .introOverlay { position: fixed; z-index: 1200; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: hsl(var(--editor)); transition: top 900ms cubic-bezier(0.16, 1, 0.3, 1), right 900ms cubic-bezier(0.16, 1, 0.3, 1), bottom 900ms cubic-bezier(0.16, 1, 0.3, 1), left 900ms cubic-bezier(0.16, 1, 0.3, 1); }
 .introOverlayPositioning { pointer-events: none; }
 .introOverlayAssembling { top: var(--intro-target-top, calc(34px + 2.25rem)); right: var(--intro-target-right, 0); bottom: var(--intro-target-bottom, 22px); left: var(--intro-target-left, calc(48px + var(--sidebar-width, 300px))); pointer-events: none; }
 .introOverlayAssembling { animation: intro-overlay-release 1000ms linear both; }
+.introOverlayReturning { top: var(--intro-target-top, calc(34px + 2.25rem)); right: var(--intro-target-right, 0); bottom: var(--intro-target-bottom, 22px); left: var(--intro-target-left, calc(48px + var(--sidebar-width, 300px))); pointer-events: none; }
+.introOverlayReturningExpand { top: 0; right: 0; bottom: 0; left: 0; }
 .introOverlay [data-welcome-card="true"] { backface-visibility: hidden; transform-style: preserve-3d; }
 .introOverlayArticleFlip { perspective: 1600px; }
 .introOverlayArticleFlip [data-welcome-mode="homepage"] [data-welcome-card="true"] { animation: homepage-card-front-flip 440ms cubic-bezier(0.45, 0, 0.2, 1) both; pointer-events: none; }
@@ -22,8 +24,22 @@
 .shellIntro .sidebarResizeHandle, .shellAssembling .sidebarResizeHandle { z-index: 1301; }
 .shellIntro .center { opacity: 0; transform: translateX(14%); }
 .shellAssembling .center { opacity: 1; transform: none; transition: none; }
+.shellReturning .titlebar { opacity: 0; transform: translateY(-110%); }
+.shellReturning .statusbar { opacity: 0; transform: translateY(110%); }
+.shellReturning .activitybar { opacity: 0; transform: translateX(-110%); }
+.shellReturning .sidebar { opacity: 0; transform: translateX(-105%); }
+.shellReturning .sidebarResizeHandle { z-index: 1301; opacity: 0; transform: translateX(calc(-1 * var(--sidebar-width, 300px))); }
+.shellReturning .center { opacity: 0; transform: translateX(14%); }
+.shellActivitybarHidden { --activitybar-width: 0px; }
+.shellSidebarHidden { --effective-sidebar-width: 0px; }
+.shellStatusbarHidden { --statusbar-height: 0px; }
+.shellActivitybarHidden .activitybar,
+.shellSidebarHidden .sidebar,
+.shellSidebarHidden .sidebarResizeHandle,
+.shellStatusbarHidden .statusbar { display: none; }
 .shellIntro .titlebar, .shellIntro .workbench, .shellIntro .statusbar,
-.shellAssembling .titlebar, .shellAssembling .workbench, .shellAssembling .statusbar { pointer-events: none; }
+.shellAssembling .titlebar, .shellAssembling .workbench, .shellAssembling .statusbar,
+.shellReturning .titlebar, .shellReturning .workbench, .shellReturning .statusbar { pointer-events: none; }
 @keyframes intro-overlay-release {
   0%, 80% { opacity: 1; }
   100% { opacity: 0; }
@@ -42,7 +58,7 @@
 .titlebarStart { min-width: 0; gap: 0.75rem; }
 .menu { display: none; align-self: stretch; gap: 0.08rem; }
 .menuGroup { position: relative; display: flex; align-items: stretch; }
-.menuButton, .titlebarButton, .action, .treeButton { border: 0; background: transparent; cursor: pointer; }
+.menuButton, .titlebarButton, .titlebarNavButton, .action, .treeButton { border: 0; background: transparent; cursor: pointer; }
 .menuButton { height: 100%; border-radius: 3px; padding: 0 0.42rem; color: inherit; font: inherit; }
 .menuButton:hover, .menuButtonOpen { background: hsl(var(--ink) / 0.08); color: hsl(var(--ink)); }
 .menuButton:focus-visible { outline: 1px solid hsl(var(--accent)); outline-offset: -2px; }
@@ -54,16 +70,27 @@
 .topMenuCheck { width: 1rem; color: hsl(var(--accent)); font-weight: 800; text-align: center; }
 .topMenuItemHost kbd { color: hsl(var(--muted)); font-family: inherit; font-size: 0.68rem; white-space: nowrap; }
 .topMenuSeparator { display: block; width: 100%; height: 1px; margin: 0.25rem 0; background: hsl(var(--line)); }
-.titlebarCenter { margin: 0 auto; gap: 0.75rem; }
-.titlebarCenter > svg, .titlebarActions > svg { width: 1rem; height: 1rem; }
+.titlebarCenter { margin: 0 auto; gap: 0.3rem; }
+.titlebarNavButton { display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 auto; place-items: center; border-radius: 2px; color: hsl(var(--muted)); }
+.titlebarNavButton:hover { background: hsl(var(--ink) / 0.1); color: hsl(var(--ink)); }
+.titlebarNavButton:focus-visible { outline: 1px solid hsl(var(--accent)); outline-offset: -1px; }
+.titlebarNavButton svg, .titlebarActions > svg { width: 1rem; height: 1rem; }
 .addressButton { display: none; height: 1.5rem; min-width: 360px; max-width: 36rem; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid transparent; border-radius: 5px; padding: 0 0.75rem; background: hsl(var(--panel)); color: hsl(var(--muted)); cursor: pointer; }
 .addressButton:hover { border-color: hsl(var(--accent)); color: hsl(var(--accent)); }
 .addressButton svg { width: 0.875rem; height: 0.875rem; }
-.titlebarActions { margin-left: auto; gap: 0.25rem; }
+.titlebarActions { position: relative; margin-left: auto; gap: 0.25rem; }
 .titlebarButton { display: grid; width: 1.5rem; height: 1.5rem; place-items: center; border-radius: 2px; }
-.titlebarButton:hover { background: hsl(var(--ink) / 0.1); }
+.titlebarButton:hover, .titlebarButtonActive { background: hsl(var(--ink) / 0.1); color: hsl(var(--ink)); }
+.titlebarButton:focus-visible { outline: 1px solid hsl(var(--accent)); outline-offset: -1px; }
 .titlebarButton svg { width: 0.875rem; height: 0.875rem; }
-.workbench { display: grid; min-height: 0; overflow: hidden; grid-template-columns: 48px var(--sidebar-width, 300px) minmax(240px, 1fr); }
+.layoutMenuHost { position: relative; display: grid; place-items: center; }
+.layoutMenu { position: absolute; z-index: 1500; top: calc(100% + 0.35rem); right: 0; width: 13.5rem; border: 1px solid hsl(var(--line)); border-radius: 4px; padding: 0.25rem 0; background: hsl(var(--panel)); color: hsl(var(--ink)); box-shadow: 0 0.8rem 2.2rem hsl(var(--ink) / 0.12); }
+.layoutMenu button { display: grid; width: 100%; min-height: 1.8rem; grid-template-columns: 1.15rem minmax(0, 1fr); align-items: center; gap: 0.35rem; border: 0; padding: 0.25rem 0.7rem 0.25rem 0.45rem; background: transparent; color: inherit; font: inherit; font-size: 0.75rem; cursor: pointer; text-align: left; }
+.layoutMenu button:hover, .layoutMenu button:focus-visible { outline: 0; background: hsl(var(--list-selection)); }
+.layoutMenu button span { color: hsl(var(--accent)); font-weight: 800; text-align: center; }
+.layoutMenu button b { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.layoutMenu > i { display: block; height: 1px; margin: 0.25rem 0; background: hsl(var(--line)); }
+.workbench { display: grid; min-height: 0; overflow: hidden; grid-template-columns: var(--activitybar-width) var(--effective-sidebar-width) minmax(240px, 1fr); }
 .activitybar { display: flex; min-height: 0; grid-column: 1; grid-row: 1; flex-direction: column; align-items: center; border-right: 1px solid hsl(var(--line)); padding: 0.5rem 0; background: hsl(var(--activity)); }
 .action { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-left: 2px solid transparent; color: hsl(var(--muted)); transition: color 120ms, background 120ms; }
 .action:hover { color: hsl(var(--ink)); }
@@ -76,6 +103,7 @@
 .activitySpacer { margin-top: auto; }
 .sidebar { display: flex; min-width: 180px; min-height: 0; grid-column: 2; grid-row: 1; flex-direction: column; overflow: hidden; background: hsl(var(--sidebar)); }
 .sidebarResizeHandle { position: relative; z-index: 4; width: 5px; min-height: 0; grid-column: 2; grid-row: 1; justify-self: end; margin-right: -2px; cursor: col-resize; background: transparent; outline: 0; transition: background 100ms; touch-action: none; }
+.sidebarMask { display: none; }
 .sidebarResizeHandle::before { position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: hsl(var(--line)); content: ""; }
 .sidebarResizeHandle:hover, .sidebarResizeHandle:focus-visible, .sidebarResizeHandle:active { background: hsl(var(--accent)); }
 .sidebarResizeHandle:hover::before, .sidebarResizeHandle:focus-visible::before, .sidebarResizeHandle:active::before { background: transparent; }
@@ -97,7 +125,6 @@
 .fileTreeScrollable { overflow: auto; }
 .treeRow { display: flex; min-width: 0; align-items: center; gap: 0.35rem; padding: 0.325rem 0.75rem 0.325rem calc(0.75rem + var(--tree-depth, 0) * 1rem); color: hsl(var(--muted)); font-size: 0.8125rem; transition: color 120ms, background 120ms; }
 .treeRow:hover { background: hsl(var(--list-hover)); color: hsl(var(--ink)); }
-:global(.dark) .treeRow:hover { background: hsl(var(--ink) / 0.05); }
 .treeRow svg { width: 1rem; height: 1rem; flex: 0 0 auto; }
 .treeRowActive { background: hsl(var(--list-selection)); color: hsl(var(--ink)); }
 .treeMeta { font-size: 0.75rem; }
@@ -195,5 +222,140 @@
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (min-width: 768px) { .menu, .addressButton { display: flex; } }
-@media (max-width: 960px) { .workbench { grid-template-columns: 48px var(--sidebar-width, 250px) minmax(240px, 1fr); } }
+@media (max-width: 960px) {
+  .shell { --effective-sidebar-width: min(var(--sidebar-width, 250px), 250px); }
+  .shellSidebarHidden { --effective-sidebar-width: 0px; }
+}
+@media (max-width: 820px) {
+  .introOverlayAssembling {
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+    animation: none;
+  }
+
+  .titlebar {
+    padding-left: 0;
+    transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+  }
+
+  .titlebarStart {
+    display: none;
+  }
+
+  .titlebarCenter {
+    margin: 0;
+  }
+
+  .shellIntro .titlebar {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+
+  .shellAssembling .titlebar {
+    opacity: 1;
+    transform: none;
+  }
+
+  .workbench {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .activitybar {
+    position: absolute;
+    z-index: 40;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--activitybar-width);
+    transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+  }
+
+  .center {
+    width: calc(100% - var(--activitybar-width));
+    min-width: 0;
+    grid-column: 1;
+    margin-left: var(--activitybar-width);
+    opacity: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+
+  .shellIntro .center,
+  .shellReturning .center,
+  .shellAssembling .center {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .sidebar {
+    position: absolute;
+    z-index: 30;
+    top: 0;
+    bottom: 0;
+    left: var(--activitybar-width);
+    width: min(82vw, 20rem);
+    min-width: 0;
+    grid-column: auto;
+    border-right: 1px solid hsl(var(--line));
+    box-shadow: 0.9rem 0 2rem hsl(var(--ink) / 0.16);
+    transition: transform 430ms cubic-bezier(0.16, 1, 0.3, 1) 90ms, opacity 260ms ease 90ms;
+  }
+
+  .sidebarResizeHandle {
+    display: none;
+  }
+
+  .sidebarMask {
+    position: absolute;
+    z-index: 20;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: var(--activitybar-width);
+    display: block;
+    border: 0;
+    padding: 0;
+    background: hsl(var(--ink) / 0.28);
+    cursor: default;
+    opacity: 1;
+    transition: opacity 430ms ease 90ms;
+  }
+
+  .shellIntro .sidebarMask,
+  .shellReturning .sidebarMask {
+    opacity: 0;
+  }
+
+  .shellIntro .activitybar,
+  .shellReturning .activitybar {
+    opacity: 0;
+    transform: translateX(-110%);
+  }
+
+  .shellIntro .sidebar,
+  .shellReturning .sidebar {
+    opacity: 0;
+    transform: translateX(calc(-100% - var(--activitybar-width)));
+  }
+
+  .shellSidebarHidden .sidebarMask {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .shellSidebarHidden .sidebar {
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(calc(-100% - var(--activitybar-width)));
+  }
+
+  .statusMobileSecondary {
+    display: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) { .collapsiblePanel, .blogPanel { transition: none; transform: none; } .introOverlayAssembling { animation: none; opacity: 1; } .introOverlayArticleFlip [data-welcome-card="true"], .introOverlayArticleFlip .introArticleBack, .editorFlipCard { animation: none; transform: none; } }
