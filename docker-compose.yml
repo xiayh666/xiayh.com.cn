@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: backend/fastify/Dockerfile
-    restart: unless-stopped
+    restart: "no"
     env_file:
       - .env
     environment:
@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    restart: unless-stopped
+    restart: "no"
     depends_on:
       api:
         condition: service_healthy

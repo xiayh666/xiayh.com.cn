@@ -542,7 +542,6 @@ function BlogArchiveOverview({ notes, stats, onOpenNote }: {
     <section className={styles.blogArchive} aria-label="博客概览">
       <header className={styles.blogArchiveHeader}>
         <span>BLOG ARCHIVE.</span>
-        <small>INDEX / PUBLIC NOTES</small>
       </header>
       <div className={styles.blogArchiveSummary}>
         <dl>

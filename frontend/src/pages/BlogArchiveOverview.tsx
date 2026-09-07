@@ -15,7 +15,6 @@ export function BlogArchiveOverview({ notes, onOpenNote }: {
     <section className={styles.blogArchive} aria-label="博客概览">
       <header className={styles.blogArchiveHeader}>
         <span>BLOG ARCHIVE.</span>
-        <small>INDEX / PUBLIC NOTES</small>
       </header>
       <div className={styles.blogArchiveIndex}>
         <span>READ TRACE.</span>
