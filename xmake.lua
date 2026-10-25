@@ -1,7 +1,5 @@
 set_project("xiayh.com.cn")
 
-includes("backend")
-
 task("frontend")
     set_menu {
         usage = "xmake frontend",

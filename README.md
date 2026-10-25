@@ -7,8 +7,7 @@
 ## 项目结构
 
 ```text
-backend/fastify/  当前使用的 TypeScript/Fastify API 服务
-backend/src/      预留的 C++/Boost.Beast 后端迁移实现
+backend/fastify/  TypeScript/Fastify API 服务
 frontend/         React + Vite 静态网站
 deploy/           Nginx、Caddy 与 systemd 部署模板
 data/             本地 SQLite、媒体文件和笔记仓库，不提交到 Git
@@ -23,7 +22,7 @@ cp deploy/blog.env .env
 pnpm --dir backend/fastify dev
 ```
 
-首次运行前，可初始化一篇本地 C++ 示例文章：
+首次运行前，可初始化本地示例文章：
 
 ```bash
 pnpm --dir backend/fastify seed:examples
