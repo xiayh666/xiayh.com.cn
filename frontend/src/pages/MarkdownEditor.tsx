@@ -1,6 +1,7 @@
 import { Crepe } from "@milkdown/crepe";
+import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
 import "@milkdown/crepe/theme/common/style.css";
-import "@milkdown/crepe/theme/classic.css";
+import "@milkdown/crepe/theme/frame.css";
 import { Code2, Eye, ImagePlus, ImageUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ClipboardEvent, type DragEvent } from "react";
 import styles from "./AdminPage.module.css";
@@ -134,9 +135,14 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
         [Crepe.Feature.Latex]: { katexOptions: { throwOnError: false } },
       },
     });
-    crepe.on((listener) => {
-      listener.markdownUpdated((_ctx, markdown) => updateValue(markdown));
+    crepe.editor.use(listener)
+    crepe.editor.config((ctx) => {
+      ctx.get(listenerCtx).markdownUpdated((_ctx, markdown, previousMarkdown) => {
+      if (markdown !== previousMarkdown) {
+        updateValue(markdown);
+      }
     });
+});
     void crepe.create().catch((reason: unknown) => {
       setError(reason instanceof Error ? reason.message : "The Markdown editor could not be initialized.");
     });
