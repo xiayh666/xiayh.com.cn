@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, Clock3, ShieldCheck, UserRound } from "lucide-react";
 import { api, type NoteSummary } from "../api";
-import { preloadMarkdownEditor } from "../pages/ArticleEditor";
-import { NotePage, preloadMarkdownReader, scrollArticleHeading } from "../pages/NotePage";
-import { WelcomePage } from "../pages/WelcomePage";
+import { scrollArticleHeading } from "../pages/articleNavigation";
+import { LazyNotePage, LazyWelcomePage } from "../pages/lazyRoutes";
 import { ActivityBar } from "./ActivityBar";
 import { CommandPalette } from "./CommandPalette";
 import { EditorArea } from "./EditorArea";
@@ -22,13 +21,6 @@ import styles from "./AppLayout.module.css";
 
 const welcomeTab: EditorTabModel = { id: "welcome", kind: "welcome", label: "Welcome", href: "/", kept: true };
 type SidebarView = "explorer" | "search" | "outline";
-
-type IdleCallbackHandle = number;
-
-type WindowWithIdleCallback = Window & typeof globalThis & {
-  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => IdleCallbackHandle;
-  cancelIdleCallback?: (handle: IdleCallbackHandle) => void;
-};
 
 export function AppLayout() {
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -85,21 +77,6 @@ export function AppLayout() {
   useEffect(() => {
     syncRouteRef.current = editorGroups.syncRoute;
   }, [editorGroups.syncRoute]);
-
-  useEffect(() => {
-    const preloadMarkdownTools = () => {
-      preloadMarkdownReader();
-      preloadMarkdownEditor();
-    };
-    const idleWindow = window as WindowWithIdleCallback;
-    if (typeof idleWindow.requestIdleCallback === "function") {
-      const handle = idleWindow.requestIdleCallback(preloadMarkdownTools, { timeout: 2_500 });
-      return () => idleWindow.cancelIdleCallback?.(handle);
-    }
-
-    const timer = window.setTimeout(preloadMarkdownTools, 1_200);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const openExplorer = () => {
     setSidebarView("explorer");
@@ -251,12 +228,14 @@ export function AppLayout() {
             "--intro-card-scale-y": introTarget.scaleY,
           } as CSSProperties : undefined}
         >
-          <WelcomePage intro workspace={introPhase === "assembling" || (introPhase === "returning" && !homeReturnExpanded)} initialNotes={notes.data?.items ?? []} onBrowse={openExplorer} onHome={closeWorkspace} onOpenNote={openHomepageNote} />
-          {introArticleSlug ? (
-            <div className={styles.introArticleBack} data-editor-flip-face="back">
-              <NotePage slug={introArticleSlug} reportStatus={false} />
-            </div>
-          ) : null}
+          <Suspense fallback={<RouteLoading label="Loading workspace…" />}>
+            <LazyWelcomePage intro workspace={introPhase === "assembling" || (introPhase === "returning" && !homeReturnExpanded)} initialNotes={notes.data?.items ?? []} onBrowse={openExplorer} onHome={closeWorkspace} onOpenNote={openHomepageNote} />
+            {introArticleSlug ? (
+              <div className={styles.introArticleBack} data-editor-flip-face="back">
+                <LazyNotePage slug={introArticleSlug} reportStatus={false} />
+              </div>
+            ) : null}
+          </Suspense>
         </div>
       ) : null}
       <TitleBar
@@ -372,6 +351,10 @@ export function AppLayout() {
     </EditorStatusContext.Provider>
     </SystemNotificationProvider>
   );
+}
+
+function RouteLoading({ label }: { label: string }) {
+  return <div role="status" aria-live="polite">{label}</div>;
 }
 
 function beginSidebarResize(event: ReactPointerEvent<HTMLDivElement>, width: number, setWidth: (width: number) => void) {

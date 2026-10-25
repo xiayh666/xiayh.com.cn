@@ -42,6 +42,27 @@ openssl rand -hex 32
 
 API 默认监听 `127.0.0.1:8080`。Vite 开发服务器会将 `/api` 请求代理到该地址。
 
+## 日常开发命令
+
+项目保留前后端独立的 lockfile，以使 Docker 镜像和裸机部署能够各自使用 `--frozen-lockfile`；仓库根目录提供统一的开发命令入口。首次开发仍需分别安装两个活跃应用的依赖：
+
+```bash
+pnpm --dir backend/fastify install --frozen-lockfile
+pnpm --dir frontend install --frozen-lockfile
+```
+
+之后从根目录运行：
+
+```bash
+pnpm dev:api       # API 开发服务
+pnpm dev:web       # Vite 开发服务
+pnpm lint          # 前端 ESLint
+pnpm typecheck     # 前后端 TypeScript 检查
+pnpm test          # 前后端回归测试
+pnpm build         # 前后端生产构建
+pnpm quality       # lint + typecheck + test + build
+```
+
 ## 构建
 
 ```bash
@@ -79,6 +100,8 @@ xmake test
 - `src/config.ts`：环境配置读取与启动校验。
 
 Fastify 使用明确的 CORS 允许列表、Helmet 安全响应头、请求体和频率限制、JSON Schema 校验、JWT 身份验证、HttpOnly SameSite Cookie，以及管理操作的 Origin 校验。定时同步任务使用独立的 `SYNC_TOKEN`，不会存储或传输管理员密码。
+
+公开读取接口使用短生命周期的 HTTP 缓存策略，登录态和写操作均为 `no-store`；媒体文件与 Vite 哈希资源可长期缓存。文章搜索由 SQLite FTS5 提供全文索引，索引随文章同步和编辑自动维护。具体模块边界、缓存契约和上线检查见 [架构与性能指南](doc/architecture-performance-hardening/architecture.md)。
 
 ## 初始化文章同步
 
@@ -129,6 +152,6 @@ curl -X POST http://127.0.0.1:8080/api/admin/sync \
 
 ## 当前限制
 
-- 搜索目前使用带有结果数量限制的 SQLite `LIKE` 查询；后续可以在不改变接口的情况下替换为 FTS5。
 - JWT 登出会清除浏览器 Cookie，但暂未维护服务端令牌吊销列表，因此登录令牌使用较短的有效期。
 - 同步任务目前只扫描 Markdown 文件；Excalidraw 预览映射仍作为 API 模型中的预留能力。
+- Milkdown/CodeMirror 编辑器只在管理编辑路径下载；如果未来需要进一步压缩编辑路径，应先以真实编辑器使用数据决定是否替换该功能集。

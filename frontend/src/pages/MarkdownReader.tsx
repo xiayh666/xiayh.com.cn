@@ -1,101 +1,49 @@
-import { Crepe } from "@milkdown/crepe";
-import "@milkdown/crepe/theme/common/style.css";
-import "@milkdown/crepe/theme/classic.css";
-import { EditorView } from "@codemirror/view";
-import { useEffect, useRef } from "react";
-import editorStyles from "./AdminPage.module.css";
-import { useCodeCopyFeedback } from "./CodeCopyFeedback";
-import { vscodeCodeTheme } from "./markdownCodeTheme";
+import { useEffect, useRef, type MouseEvent } from "react";
+import "katex/dist/katex.min.css";
+import styles from "./MarkdownReader.module.css";
 
-export function MarkdownReader({ markdown, onReady }: { markdown: string; onReady?: () => void }) {
+type MarkdownReaderProps = {
+  html: string;
+  onReady?: () => void;
+};
+
+export function MarkdownReader({ html, onReady }: MarkdownReaderProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const readyRef = useRef(onReady);
-  const { handleCopy } = useCodeCopyFeedback(rootRef);
   readyRef.current = onReady;
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    let disposed = false;
-    const measured = new WeakSet<Element>();
-    const timers = new Set<number>();
-    const markReadonlyCodeMirror = (editor: HTMLElement) => {
-      const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
-      editor.dataset.readonlyCodeMirror = "true";
-      editor.setAttribute("aria-readonly", "true");
-      if (isTouchDevice) editor.tabIndex = -1;
-      editor.querySelectorAll<HTMLElement>(".cm-content").forEach((content) => {
-        content.inputMode = "none";
-        content.setAttribute("inputmode", "none");
-        content.setAttribute("aria-readonly", "true");
-        content.setAttribute("autocomplete", "off");
-        content.setAttribute("autocorrect", "off");
-        content.setAttribute("autocapitalize", "off");
-        content.spellcheck = false;
-        if (isTouchDevice) {
-          content.contentEditable = "false";
-          content.tabIndex = -1;
-        }
-      });
-    };
-    const measureCodeMirror = (editor: HTMLElement) => {
-      markReadonlyCodeMirror(editor);
-      if (measured.has(editor)) return;
-      const view = EditorView.findFromDOM(editor);
-      if (!view) return;
-      measured.add(editor);
-      const block = editor.closest<HTMLElement>(".milkdown-code-block");
-      void (async () => {
-        await (document.fonts?.ready ?? Promise.resolve());
-        if (root.closest("[data-editor-flip-face='back']")) {
-          await new Promise<void>((resolve) => {
-            const timer = window.setTimeout(() => { timers.delete(timer); resolve(); }, 460);
-            timers.add(timer);
-          });
-        }
-        if (disposed) return;
-        view.requestMeasure({
-          read: () => null,
-          write: () => {
-            if (!disposed && block) block.dataset.codeMeasured = "true";
-          },
-        });
-      })();
-    };
-    const scanCodeMirrors = () => {
-      root.querySelectorAll<HTMLElement>(".cm-editor").forEach(measureCodeMirror);
-    };
-    const observer = new MutationObserver(scanCodeMirrors);
-    observer.observe(root, { childList: true, subtree: true });
-    const crepe = new Crepe({
-      root,
-      defaultValue: markdown,
-      features: {
-        [Crepe.Feature.TopBar]: false,
-        [Crepe.Feature.Toolbar]: false,
-        [Crepe.Feature.BlockEdit]: false,
-        [Crepe.Feature.Cursor]: false,
-        [Crepe.Feature.LinkTooltip]: false,
-        [Crepe.Feature.AI]: false,
-      },
-      featureConfigs: {
-        [Crepe.Feature.CodeMirror]: { theme: vscodeCodeTheme, onCopy: handleCopy },
-        [Crepe.Feature.Latex]: { katexOptions: { throwOnError: false } },
-      },
+    root.querySelectorAll<HTMLElement>("pre").forEach((block) => {
+      if (block.querySelector("[data-code-copy]")) return;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.codeCopy = "true";
+      button.setAttribute("aria-label", "Copy code");
+      button.textContent = "Copy";
+      block.append(button);
     });
-    crepe.setReadonly(true);
-    void crepe.create().then(() => {
-      if (disposed) return;
-      scanCodeMirrors();
-      readyRef.current?.();
-    });
-    return () => {
-      disposed = true;
-      observer.disconnect();
-      timers.forEach((timer) => window.clearTimeout(timer));
-      void crepe.destroy();
-    };
-  }, [handleCopy, markdown]);
+    const frame = requestAnimationFrame(() => readyRef.current?.());
+    return () => cancelAnimationFrame(frame);
+  }, [html]);
 
-  return <div ref={rootRef} className={editorStyles.markdownVisual} data-markdown-readonly="true" aria-label="Article content" />;
+  const copyCode = (event: MouseEvent<HTMLDivElement>) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>("button[data-code-copy]");
+    if (!button) return;
+    const code = button.parentElement?.querySelector("code")?.textContent ?? "";
+    if (!code) return;
+    void navigator.clipboard?.writeText(code).then(() => {
+      button.textContent = "Copied";
+      window.setTimeout(() => { button.textContent = "Copy"; }, 1_800);
+    }).catch(() => undefined);
+  };
+
+  return <div
+    ref={rootRef}
+    className={styles.reader}
+    aria-label="Article content"
+    onClick={copyCode}
+    dangerouslySetInnerHTML={{ __html: html }}
+  />;
 }

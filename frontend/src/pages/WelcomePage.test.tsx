@@ -14,10 +14,10 @@ describe("WelcomePage", () => {
   it("shows the blog archive in the workspace welcome page", () => {
     const { container } = render(<MemoryRouter><WelcomePage initialNotes={[recentNote]} /></MemoryRouter>);
     expect(screen.getByRole("region", { name: "博客概览" })).toBeInTheDocument();
-    expect(screen.getByText("HOME / BLOG")).toBeInTheDocument();
-    expect(screen.getByText("MODULE INDEX.")).toBeInTheDocument();
+    expect(screen.getByText("BLOG")).toBeInTheDocument();
+    expect(screen.getByText("BLOG ARCHIVE.")).toBeInTheDocument();
     expect(screen.getByLabelText("最近十二个月文章发布频率热力图")).toBeInTheDocument();
-    expect(screen.getByText("1,200 WORDS / LAST 12 MONTHS")).toBeInTheDocument();
+    expect(screen.getByText("过去12个月: 1,200 字")).toBeInTheDocument();
     expect(container.querySelector('[data-welcome-mode="workspace"]')).toBeInTheDocument();
     expect(container.querySelector("[data-welcome-environment]")).not.toBeInTheDocument();
   });
@@ -25,8 +25,8 @@ describe("WelcomePage", () => {
   it("keeps the dashboard entry in fullscreen intro mode", () => {
     const { container } = render(<MemoryRouter><WelcomePage intro /></MemoryRouter>);
     expect(screen.queryByRole("button", { name: "进入工作区" })).not.toBeInTheDocument();
-    expect(screen.getByText("HOME / INDEX")).toBeInTheDocument();
-    expect(screen.getByText("MODULE INDEX.")).toBeInTheDocument();
+    expect(screen.getByText("WELCOME")).toBeInTheDocument();
+    expect(screen.getByText("模型展示")).toBeInTheDocument();
     expect(container.querySelector('[data-welcome-mode="homepage"]')).toBeInTheDocument();
     expect(container.querySelector("[data-welcome-environment]")).toBeInTheDocument();
   });

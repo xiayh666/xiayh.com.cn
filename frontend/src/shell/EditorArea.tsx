@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { AdminPage } from "../pages/AdminPage";
-import { NewArticlePage } from "../pages/ArticleEditor";
-import { NotePage } from "../pages/NotePage";
-import { WelcomePage } from "../pages/WelcomePage";
+import { Suspense, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { LazyAdminPage, LazyNewArticlePage, LazyNotePage, LazyWelcomePage } from "../pages/lazyRoutes";
 import { EditorTabs, type EditorTabModel } from "./EditorTabs";
 import { type EditorGroupModel, type EditorLayoutNode, useEditorGroups } from "./useEditorGroups";
 import styles from "./AppLayout.module.css";
@@ -144,12 +141,16 @@ function EditorTabContent({ tab, reportStatus, onBrowse, onHome }: {
   onBrowse: () => void;
   onHome: () => void;
 }) {
-  if (tab.kind === "welcome") return <WelcomePage workspace onBrowse={onBrowse} onHome={onHome} />;
-  if (tab.kind === "login") return <AdminPage view="login" />;
-  if (tab.kind === "settings") return <AdminPage view="settings" />;
-  if (tab.kind === "new-article") return <NewArticlePage />;
-  const slug = decodeURIComponent(tab.href.replace(/^\/notes\//, ""));
-  return <NotePage slug={slug} reportStatus={reportStatus} />;
+  let content;
+  if (tab.kind === "welcome") content = <LazyWelcomePage workspace onBrowse={onBrowse} onHome={onHome} />;
+  else if (tab.kind === "login") content = <LazyAdminPage view="login" />;
+  else if (tab.kind === "settings") content = <LazyAdminPage view="settings" />;
+  else if (tab.kind === "new-article") content = <LazyNewArticlePage />;
+  else {
+    const slug = decodeURIComponent(tab.href.replace(/^\/notes\//, ""));
+    content = <LazyNotePage slug={slug} reportStatus={reportStatus} />;
+  }
+  return <Suspense fallback={<div role="status">Loading editor…</div>}>{content}</Suspense>;
 }
 
 function EditorContentPlane({ tab, reportStatus, onBrowse, onHome }: {

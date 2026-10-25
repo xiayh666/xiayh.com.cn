@@ -2,13 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
-import "katex/dist/katex.min.css";
 import "./styles.css";
 import { AppLayout } from "./shell/AppLayout";
-import { WelcomePage } from "./pages/WelcomePage";
-import { NotePage } from "./pages/NotePage";
-import { AdminPage } from "./pages/AdminPage";
-import { NewArticlePage } from "./pages/ArticleEditor";
 
 type BootLoaderState = {
   fadeMs: number;
@@ -40,11 +35,11 @@ const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      { index: true, element: <WelcomePage /> },
-      { path: "notes/*", element: <NotePage /> },
-      { path: "login", element: <AdminPage view="login" /> },
-      { path: "settings", element: <AdminPage view="settings" /> },
-      { path: "new", element: <NewArticlePage /> },
+      { index: true },
+      { path: "notes/*" },
+      { path: "login" },
+      { path: "settings" },
+      { path: "new" },
       { path: "admin", element: <Navigate to="/settings" replace /> },
     ],
   },

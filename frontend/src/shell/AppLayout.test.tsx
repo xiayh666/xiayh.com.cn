@@ -47,7 +47,7 @@ describe("AppLayout editor tabs", () => {
       </QueryClientProvider>,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: /博客/ }));
+    fireEvent.click((await screen.findAllByRole("button", { name: /博客/ }))[0]);
     const explorer = await screen.findByRole("navigation", { name: "Article explorer" });
     fireEvent.click(await within(explorer).findByRole("button", { name: "one.md" }));
     await screen.findByRole("heading", { name: "Article One" });

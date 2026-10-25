@@ -34,12 +34,12 @@ export type Note = Omit<DocumentRow, "published" | "pinned" | "tags"> & {
 };
 
 const summaryColumns = `
-  id, path, slug, title, summary, type, visibility,
-  published, pinned, status, updated_at AS updatedAt,
-  preview_path AS previewPath,
-  COALESCE(published_at, updated_at) AS publishedAt,
-  view_count AS viewCount,
-  word_count AS wordCount
+  documents.id, documents.path, documents.slug, documents.title, documents.summary, documents.type, documents.visibility,
+  documents.published, documents.pinned, documents.status, documents.updated_at AS updatedAt,
+  documents.preview_path AS previewPath,
+  COALESCE(documents.published_at, documents.updated_at) AS publishedAt,
+  documents.view_count AS viewCount,
+  documents.word_count AS wordCount
   , COALESCE((SELECT json_group_array(t.name) FROM document_tags dt JOIN tags t ON t.id = dt.tag_id WHERE dt.document_id = documents.id), '[]') AS tags
 `;
 
@@ -71,16 +71,23 @@ export function findNote(db: DatabaseSync, slug: string, isAdmin: boolean): Note
 }
 
 export function searchNotes(db: DatabaseSync, query: string, isAdmin: boolean): Note[] {
-  const pattern = `%${query.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+  const ftsQuery = searchExpression(query);
+  if (!ftsQuery) return [];
   const rows = db.prepare(`
     SELECT ${summaryColumns}
     FROM documents
-    WHERE ${visibilityClause(isAdmin)}
-      AND (title LIKE ? ESCAPE '\\' OR summary LIKE ? ESCAPE '\\' OR path LIKE ? ESCAPE '\\')
-    ORDER BY pinned DESC, updated_at DESC
+    JOIN documents_fts ON documents_fts.rowid = documents.id
+    WHERE documents_fts MATCH ? AND ${visibilityClause(isAdmin)}
+    ORDER BY pinned DESC, bm25(documents_fts), updated_at DESC
     LIMIT 100
-  `).all(pattern, pattern, pattern) as unknown as DocumentRow[];
+  `).all(ftsQuery) as unknown as DocumentRow[];
   return rows.map(mapNote);
+}
+
+function searchExpression(query: string): string | undefined {
+  const terms = query.normalize("NFKC").match(/[\p{Letter}\p{Number}_]+/gu) ?? [];
+  if (!terms.length) return;
+  return terms.slice(0, 20).map((term) => `"${term}"*`).join(" AND ");
 }
 
 function markdownFiles(root: string): string[] {

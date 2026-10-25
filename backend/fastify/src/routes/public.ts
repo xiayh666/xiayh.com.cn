@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve, sep } from "node:path";
 import { findNote, listNotes, searchNotes } from "../services/notes.js";
@@ -21,6 +21,24 @@ function sourceMarkdown(root: string, path: string): string {
   return existsSync(target) ? readFileSync(target, "utf8") : "";
 }
 
+function cachePublicRead(reply: FastifyReply, maxAgeSeconds: number): void {
+  reply.header("cache-control", `public, max-age=${maxAgeSeconds}, stale-while-revalidate=${maxAgeSeconds * 5}`);
+  const existing = reply.getHeader("vary");
+  const values = new Set(
+    (Array.isArray(existing) ? existing.join(",") : String(existing ?? ""))
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+  values.add("Cookie");
+  values.add("Authorization");
+  reply.header("vary", [...values].join(", "));
+}
+
+function cacheSessionRead(reply: FastifyReply): void {
+  reply.header("cache-control", "no-store");
+}
+
 export async function publicRoutes(app: FastifyInstance): Promise<void> {
   app.get("/health", async () => ({ status: "ok" }));
 
@@ -29,9 +47,15 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
     return { authenticated, username: authenticated ? request.user.sub : null };
   });
 
-  app.get("/notes", async (request) => ({ items: listNotes(app.db, await isAdmin(request)) }));
+  app.get("/notes", async (request, reply) => {
+    const admin = await isAdmin(request);
+    if (admin) cacheSessionRead(reply);
+    else cachePublicRead(reply, 60);
+    return { items: listNotes(app.db, admin) };
+  });
 
-  app.get("/stats", async () => {
+  app.get("/stats", async (_request, reply) => {
+    cachePublicRead(reply, 60);
     const content = app.db.prepare(`
       SELECT COUNT(*) AS blogCount, COALESCE(SUM(view_count), 0) AS totalViews
       FROM documents
@@ -51,8 +75,11 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
   app.get<{ Params: { "*": string } }>("/notes/*", {
     schema: { params: { type: "object", required: ["*"], properties: { "*": { type: "string", minLength: 1 } } } },
   }, async (request, reply) => {
-    const note = findNote(app.db, request.params["*"], await isAdmin(request));
+    const admin = await isAdmin(request);
+    const note = findNote(app.db, request.params["*"], admin);
     if (!note) return reply.notFound("Note not found");
+    if (admin) cacheSessionRead(reply);
+    else cachePublicRead(reply, 300);
     return { ...note, markdown: note.markdown || sourceMarkdown(app.config.notesRepo, note.path) };
   });
 
@@ -69,8 +96,10 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
     return result;
   });
 
-  app.get("/tags", async (request) => {
+  app.get("/tags", async (request, reply) => {
     const admin = await isAdmin(request);
+    if (admin) cacheSessionRead(reply);
+    else cachePublicRead(reply, 300);
     const items = admin
       ? app.db.prepare("SELECT id, name, slug, color FROM tags ORDER BY name").all()
       : app.db.prepare(`
@@ -86,8 +115,11 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
 
   app.get<{ Querystring: { q?: string } }>("/search", {
     schema: { querystring: { type: "object", properties: { q: { type: "string", maxLength: 200 } } } },
-  }, async (request) => {
+  }, async (request, reply) => {
     const query = request.query.q?.trim() ?? "";
-    return { items: query ? searchNotes(app.db, query, await isAdmin(request)) : [] };
+    const admin = await isAdmin(request);
+    if (admin) cacheSessionRead(reply);
+    else cachePublicRead(reply, 60);
+    return { items: query ? searchNotes(app.db, query, admin) : [] };
   });
 }

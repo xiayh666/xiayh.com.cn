@@ -12,7 +12,6 @@ const commandOutput = [
   ["-- No entries --", "dns blame check: inconclusive", "works-on-my-machine flag: ignored"],
   ["LISTEN 0 511 loopback:**** 0.0.0.0:* users:((\"naming-things\"))", "LISTEN 0 128 loopback:**** 0.0.0.0:* users:((\"cache-invalidator\"))", "LISTEN 0  64 loopback:****    [::]:* users:((\"off-by-one\"))"],
 ];
-const modelNames = ["C++", "ARCH LINUX", "MINECRAFT", "REDSTONE", "STM32"];
 const profile = {
   name: import.meta.env.VITE_PROFILE_NAME?.trim() || "Xiayh",
   avatar: import.meta.env.VITE_PROFILE_AVATAR?.trim() || profileAvatar,
@@ -75,11 +74,11 @@ function useClock() {
   const daysInYear = (Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / 86_400_000;
   const dayOfYear = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86_400_000) + 1;
   const progress = [
-    { label: "YEAR", value: ((dayOfYear - 1 + dayProgress) / daysInYear) * 100 },
-    { label: "MONTH", value: ((day - 1 + dayProgress) / daysInMonth) * 100 },
-    { label: "DAY", value: (secondsInDay / 86_400) * 100 },
-    { label: "HOUR", value: ((minutes * 60 + seconds) / 3600) * 100 },
-    { label: "MIN", value: (seconds / 60) * 100 },
+    { label: "年", value: ((dayOfYear - 1 + dayProgress) / daysInYear) * 100 },
+    { label: "月", value: ((day - 1 + dayProgress) / daysInMonth) * 100 },
+    { label: "日", value: (secondsInDay / 86_400) * 100 },
+    { label: "时", value: ((minutes * 60 + seconds) / 3600) * 100 },
+    { label: "分", value: (seconds / 60) * 100 },
   ];
   return {
     hours: String(hours).padStart(2, "0"),
@@ -169,7 +168,6 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   const music = useAmbientMusic();
   const navigate = useNavigate();
   const leaveTimerRef = useRef<number>();
-  const [activeModel, setActiveModel] = useState(0);
   const [modelRotationEnabled, setModelRotationEnabled] = useState(!intro);
   const [notes, setNotes] = useState<NoteSummary[]>(initialNotes);
   const [stats, setStats] = useState<SiteStats>();
@@ -207,6 +205,8 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
     let startY = 0;
     let moveY = 0;
     let hasMoved = false;
+    let nestedScroll = false;
+    let touchTarget: EventTarget | null = null;
 
     const getTargets = () => Array.from(page.querySelectorAll<HTMLElement>("[data-mobile-snap='true']"))
       .sort((left, right) => left.offsetTop - right.offsetTop);
@@ -237,13 +237,28 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
       window.setTimeout(() => { locked = false; }, 620);
     };
 
+    const canScrollWithinPage = (target: EventTarget | null, delta: number) => {
+      let element = target instanceof Element ? target : null;
+      while (element && element !== page) {
+        if (element instanceof HTMLElement && /auto|scroll/.test(getComputedStyle(element).overflowY)) {
+          const remaining = element.scrollHeight - element.clientHeight;
+          if (remaining > 1 && (delta > 0 ? element.scrollTop < remaining - 1 : element.scrollTop > 1)) return true;
+        }
+        element = element.parentElement;
+      }
+      return false;
+    };
+
     const onWheel = (event: WheelEvent) => {
       if (!media.matches || Math.abs(event.deltaY) < 12) return;
+      if (canScrollWithinPage(event.target, event.deltaY)) return;
       event.preventDefault();
       snapBy(event.deltaY > 0 ? 1 : -1);
     };
 
     const onTouchStart = (event: TouchEvent) => {
+      touchTarget = event.target;
+      nestedScroll = false;
       startY = event.touches[0]?.clientY ?? 0;
       moveY = startY;
       hasMoved = false;
@@ -252,12 +267,16 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
     const onTouchMove = (event: TouchEvent) => {
       moveY = event.touches[0]?.clientY ?? moveY;
       if (Math.abs(moveY - startY) < 10) return;
+      if (nestedScroll || canScrollWithinPage(touchTarget, startY - moveY)) {
+        nestedScroll = true;
+        return;
+      }
       hasMoved = true;
       event.preventDefault();
     };
 
     const onTouchEnd = () => {
-      if (!hasMoved) return;
+      if (!hasMoved || nestedScroll) return;
       const delta = startY - moveY;
       if (Math.abs(delta) < 36) return;
       snapBy(delta > 0 ? 1 : -1);
@@ -368,15 +387,14 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
 
       <div className={styles.quadrantFrame} data-welcome-card="true">
         <div className={styles.topRule} aria-hidden="true" />
-        <div className={styles.focusGuide} aria-hidden="true"><span /><i /></div>
 
         <section className={`${styles.quadrant} ${styles.introQuadrant}`} data-mobile-snap="true">
           <div className={styles.pageIndex} aria-hidden="true">
             <b>{blogContext ? "01" : "00"}</b>
-            <span key={blogContext ? "blog" : "home"} className={styles.pageIndexRoute}>{blogContext ? "HOME / BLOG" : "HOME / INDEX"}</span>
+            <span key={blogContext ? "blog" : "home"} className={styles.pageIndexRoute}>{blogContext ? "BLOG" : "WELCOME"}</span>
           </div>
           <header className={styles.heading}>
-            <span className={styles.eyebrow}>HOME PORTAL</span>
+            {/* <span className={styles.eyebrow}>HOME PORTAL</span> */}
             <h1 aria-label="欢迎来到">
               {["欢", "迎", "来", "到"].map((glyph) => <span key={glyph} className={styles.welcomeGlyph} aria-hidden="true">{glyph}</span>)}
             </h1>
@@ -393,11 +411,11 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
         <section className={`${styles.quadrant} ${styles.clockQuadrant}`} data-mobile-snap="true">
           <section className={styles.identityStrip} aria-label="站点数据与个人信息">
             <div className={styles.siteStatsBlock}>
-              <span className={styles.stripLabel}>SITE DATA.</span>
+              <span className={styles.stripLabel}>站点数据</span>
               <dl>
-                <div><dt>BLOGS</dt><dd>{stats?.blogCount ?? "—"}</dd></div>
-                <div><dt>READS</dt><dd>{stats?.totalViews ?? "—"}</dd></div>
-                <div><dt>VISITS</dt><dd>{stats?.visits ?? "—"}</dd></div>
+                <div><dt>文章</dt><dd>{stats?.blogCount ?? "—"}</dd></div>
+                <div><dt>阅读量</dt><dd>{stats?.totalViews ?? "—"}</dd></div>
+                <div><dt>访客量</dt><dd>{stats?.visits ?? "—"}</dd></div>
               </dl>
             </div>
 
@@ -413,7 +431,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
               <span className={styles.avatarFrame}>
                 {avatarFailed ? <b>{profile.name.slice(0, 1)}</b> : <img src={profile.avatar} alt={`${profile.name} 的头像`} onError={() => setAvatarFailed(true)} />}
               </span>
-              <span><strong>{profile.name}</strong><b>Southwest University</b><b>Computer Science</b></span>
+              <span><strong>{profile.name}</strong><b>西南大学</b><b>计算机科学与技术</b></span>
             </div>
 
             <button type="button" className={styles.musicControl} aria-pressed={music.playing} onClick={music.toggle}>
@@ -430,7 +448,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
             className={`${styles.recentUpdates} ${updatesPulse ? styles.recentUpdatesPulse : ""}`}
             aria-label="最近更新"
           >
-            <header><span>RECENT UPDATE.</span></header>
+            <header><span>近期更新</span></header>
             <div>
               {recentNotes.map((note, index) => (
                 <button key={note.id} type="button" onClick={() => openNote(note.slug)}>
@@ -444,19 +462,15 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
 
         <section className={`${styles.quadrant} ${styles.navigationQuadrant}`}>
           <aside className={styles.clockPanel} aria-label={`当前时间 ${clock.hours}:${clock.minutes}:${clock.seconds}`}>
-            <header className={styles.clockHeader}>
-              <span>LOCAL TIME.</span>
-            </header>
             <div className={styles.clockBody}>
               <section className={styles.clockTime}>
-                <small>CLOCK</small>
                 <div className={styles.clockFace}>
                   <strong>{clock.hours}<i>:</i>{clock.minutes}</strong>
-                  <span><small>SEC</small><b>{clock.seconds}</b></span>
+                  <span><b>{clock.seconds}</b></span>
                 </div>
               </section>
               <section className={styles.clockDate}>
-                <div><small>CALENDAR</small><b>{clock.weekday}</b></div>
+                <div><b>{clock.weekday}</b></div>
                 <strong><span>{clock.month}</span><i>/</i><span>{clock.day}</span></strong>
                 <footer><b>{clock.year}</b><small>UTC+08</small></footer>
               </section>
@@ -472,7 +486,6 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
           </aside>
 
           <div className={styles.navigation}>
-            <div className={styles.navigationHeader}><span>MODULE INDEX.</span></div>
             <LabCard index="01" label="博客" detail="" icon={<BookOpen />} onClick={beginBrowse} />
             <LabCard index="02" label="动态" detail="" icon={<Activity />} disabled />
             <LabCard index="03" label="仓库" detail="" icon={<FolderGit2 />} disabled />
@@ -488,12 +501,12 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
           <div className={styles.modelDisplay}>
                 <span className={styles.modelBackplate} aria-hidden="true" />
                 <svg className={styles.modelFrame} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect x="0.3" y="0.3" width="99.4" height="99.4" pathLength="1" /></svg>
-                <span className={styles.modelLabel}>MODEL DISPLAY.</span>
+                <span className={styles.modelLabel}>模型展示</span>
                 <span className={`${styles.corner} ${styles.cornerTopLeft}`} aria-hidden="true" />
                 <span className={`${styles.corner} ${styles.cornerTopRight}`} aria-hidden="true" />
                 <span className={`${styles.corner} ${styles.cornerBottomLeft}`} aria-hidden="true" />
                 <span className={`${styles.corner} ${styles.cornerBottomRight}`} aria-hidden="true" />
-                <span className={styles.modelContent}><span className={styles.modelGrid} aria-hidden="true" /><PixelAssembly active={!leaving} rotationEnabled={modelRotationEnabled} onShapeChange={setActiveModel} /></span>
+                <PixelAssembly active={!leaving} rotationEnabled={modelRotationEnabled} />
           </div>
 
           <span className={styles.blogLoadingMark} aria-hidden="true">
@@ -502,13 +515,18 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
             <small>01 / NOTES</small>
           </span>
 
-          <span key={activeModel} className={styles.annotationLabel}><b>{String(activeModel + 1).padStart(2, "0")} / {modelNames[activeModel]}</b></span>
-              <svg className={styles.annotationLine} viewBox="0 0 360 150" preserveAspectRatio="none" aria-hidden="true"><path d="M4 102H190L256 30H356" /><circle cx="4" cy="102" r="4" /></svg>
-              <div className={styles.modelTelemetry} aria-hidden="true">
-                <span><small>ROTATION</small><b>0.00034 RAD/MS</b></span><span><small>CYCLE</small><b>18.48 SEC</b></span><span><small>PROJECTION</small><b>3-AXIS / CANVAS</b></span>
-              </div>
-              <div className={styles.axisOrnament} aria-hidden="true"><span>AXIS / XYZ</span><i /><i /><i /></div>
-              <div className={styles.registrationMark} aria-hidden="true"><i /><span>VIEW / 01</span></div>
+          <div className={styles.axisOrnament} aria-hidden="true"><span>AXIS  XYZ</span><i /><i /><i /></div>
+          <div className={styles.registrationMark} aria-hidden="true"><i /><span>VIEW 01</span></div>
+
+          <aside className={styles.projectPanel} aria-label="项目">
+            <header><span>项目</span><FolderGit2 aria-hidden="true" /></header>
+            <ul className={styles.projectList}>
+              <li><button type="button" onClick={() => openExternal("https://github.com/xiayh666/xiayh.com.cn")}>
+                <small>01</small><span><strong>个人网站</strong><small>xiayh.com.cn</small></span><span aria-hidden="true">↗</span>
+              </button></li>
+            </ul>
+            <button type="button" className={styles.projectMore} onClick={() => openExternal("https://github.com/xiayh666?tab=repositories")}>GitHub 项目列表 <span aria-hidden="true">↗</span></button>
+          </aside>
             </>
           ) : (
             <BlogArchiveOverview
@@ -521,7 +539,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
 
         {!workspaceMode ? <>
           <div className={styles.edgeRuler} aria-hidden="true"><span>Y</span><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-          <div className={styles.footerMark} aria-hidden="true"><b>DATA.</b><span>XIAYH.COM.CN / 2026</span></div>
+          {/* <div className={styles.footerMark} aria-hidden="true"><b>DATA.</b><span>XIAYH.COM.CN / 2026</span></div> */}
         </> : null}
       </div>
     </section>
@@ -568,7 +586,7 @@ function BlogArchiveOverview({ notes, stats, onOpenNote }: {
       <div className={styles.blogArchiveActivity}>
         <header>
           <span>WRITING ACTIVITY.</span>
-          <small>{formatWordCount(activity.totalWords)} WORDS / LAST 12 MONTHS</small>
+          <small>过去12个月: {formatWordCount(activity.totalWords)} 字</small>
         </header>
         <div className={styles.activityCalendar} aria-label="最近十二个月文章发布频率热力图">
           <div

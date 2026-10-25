@@ -1,11 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./WelcomePage.module.css";
 
 type Point = { x: number; y: number; z: number; tx: number; ty: number; tz: number; color: string };
 const rotationSpeed = 0.00051;
 const rotationPeriod = Math.PI * 2 / rotationSpeed;
 
-export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = true }: { onShapeChange?: (shape: number) => void; active?: boolean; rotationEnabled?: boolean } = {}) {
+const modelNames = ["C++", "ARCH LINUX", "MINECRAFT", "REDSTONE", "STM32"];
+
+export function PixelAssembly({ active = true, rotationEnabled = true }: { active?: boolean; rotationEnabled?: boolean } = {}) {
+  const [shapeIndex, setShapeIndex] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rotationEnabledRef = useRef(false);
 
@@ -39,6 +42,7 @@ export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = 
 
     const setTargets = (shape: number) => {
       assembling = true;
+      setShapeIndex(shape);
       nextShapeAt = Number.POSITIVE_INFINITY;
       if (shape === 2) {
         const radius = Math.min(width, height) * 0.1175;
@@ -104,6 +108,11 @@ export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = 
       canvas.height = Math.max(1, Math.round(height * ratio));
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       activeShape = -1;
+      // Resizing clears the canvas; reduced motion still needs one fresh frame.
+      if (reducedMotion) {
+        window.cancelAnimationFrame(frame);
+        frame = window.requestAnimationFrame(draw);
+      }
     };
 
     const draw = (time: number) => {
@@ -112,7 +121,6 @@ export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = 
       if (activeShape < 0) {
         activeShape = 0;
         setTargets(activeShape);
-        onShapeChange?.(activeShape);
       }
       const canRotate = !reducedMotion && rotationEnabledRef.current && !assembling;
       if (canRotate) {
@@ -121,7 +129,6 @@ export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = 
         if (time >= nextShapeAt) {
           activeShape = (activeShape + 1) % 5;
           setTargets(activeShape);
-          onShapeChange?.(activeShape);
         }
       }
 
@@ -150,7 +157,9 @@ export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = 
         context.fillStyle = point.color;
         context.fillRect(width / 2 + rotatedX * scale, height / 2 + floatY + rotatedY * scale, size, size);
       });
-      if (assembling && (reducedMotion || remainingDistance / points.length < 0.8)) assembling = false;
+      if (assembling && (reducedMotion || (rotationEnabledRef.current && remainingDistance / points.length < 0.8))) {
+        assembling = false;
+      }
       context.globalAlpha = 1;
 
       if (!reducedMotion && !document.hidden) frame = window.requestAnimationFrame(draw);
@@ -171,9 +180,19 @@ export function PixelAssembly({ onShapeChange, active = true, rotationEnabled = 
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.cancelAnimationFrame(frame);
     };
-  }, [active, onShapeChange]);
+  }, [active]);
 
-  return <canvas ref={canvasRef} className={styles.pixelCanvas} aria-hidden="true" />;
+  return <div className={styles.modelScene}>
+    <span className={styles.modelContent}>
+      <span className={styles.modelGrid} aria-hidden="true" />
+      <canvas ref={canvasRef} className={styles.pixelCanvas} aria-hidden="true" />
+    </span>
+    <div className={styles.modelAnnotation}>
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M2 46H16L47 1H48" /><circle cx="2" cy="46" r="2" /></svg>
+      <b>{modelNames[shapeIndex]}</b>
+      <svg className={styles.annotationUnderline} viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true"><path d="M0 1H100" /></svg>
+    </div>
+  </div>;
 }
 
 function drawSymbol(context: CanvasRenderingContext2D, shape: number) {

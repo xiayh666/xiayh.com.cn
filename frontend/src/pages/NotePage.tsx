@@ -5,12 +5,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useSetEditorStatus } from "../shell/EditorStatusContext";
 import { ArticleBreadcrumbs, type ArticleHeading } from "./ArticleBreadcrumbs";
-import { ArticleEditor } from "./ArticleEditor";
+import { scrollArticleHeading } from "./articleNavigation";
 import styles from "./NotePage.module.css";
 
 const loadMarkdownReader = () => import("./MarkdownReader").then((module) => ({ default: module.MarkdownReader }));
 const MarkdownReader = lazy(loadMarkdownReader);
 export const preloadMarkdownReader = () => { void loadMarkdownReader(); };
+const ArticleEditor = lazy(() => import("./ArticleEditor").then((module) => ({ default: module.ArticleEditor })));
 
 const articleScrollPositions = new Map<string, number>();
 const scrollPositionKey = (slug: string) => `article-scroll:${slug}`;
@@ -179,7 +180,11 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
 
   if (noteQuery.isError) return <div className={styles.message}>Note not found.</div>;
 
-  if (editing && note) return <ArticleEditor note={note} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />;
+  if (editing && note) return (
+    <Suspense fallback={<LoadingDocument pendingPath={note.path} />}>
+      <ArticleEditor note={note} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />
+    </Suspense>
+  );
 
   const canEdit = session.data?.authenticated;
 
@@ -205,7 +210,7 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
         {note ? (
           <Suspense fallback={<LoadingDocument pendingPath={pendingPath} />}>
             <div key={note.slug} ref={articleRef} className={`${styles.article} ${styles.articleEnter}`} onClick={handleArticleNavigation}>
-              <MarkdownReader markdown={note.markdown} onReady={() => handleReaderReady(note.slug)} />
+              <MarkdownReader html={note.html} onReady={() => handleReaderReady(note.slug)} />
             </div>
           </Suspense>
         ) : (
@@ -230,12 +235,4 @@ function LoadingDocument({ pendingPath }: { pendingPath: string }) {
   </div>;
 }
 
-export function scrollArticleHeading(root: ParentNode, id: string) {
-  const target = root.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
-  const scroller = target?.closest<HTMLElement>("[data-article-scroller]");
-  if (!target || !scroller) return;
-  const targetRect = target.getBoundingClientRect();
-  const scrollerRect = scroller.getBoundingClientRect();
-  const top = Math.max(0, scroller.scrollTop + targetRect.top - scrollerRect.top - 16);
-  scroller.scrollTop = top;
-}
+export { scrollArticleHeading } from "./articleNavigation";

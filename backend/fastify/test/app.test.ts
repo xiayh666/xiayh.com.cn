@@ -9,6 +9,7 @@ import { buildApp } from "../src/app.js";
 
 let app: FastifyInstance;
 let cookie = "";
+let notesRepo = "";
 
 function multipartFile(content: Buffer, filename: string, mime: string) {
   const boundary = "----xiayh-site-test-boundary";
@@ -25,7 +26,7 @@ function multipartFile(content: Buffer, filename: string, mime: string) {
 before(async () => {
   process.env.NODE_ENV = "test";
   const root = mkdtempSync(join(tmpdir(), "xiayh-site-api-"));
-  const notesRepo = join(root, "notes");
+  notesRepo = join(root, "notes");
   const mediaRoot = join(root, "media");
   mkdirSync(notesRepo);
   writeFileSync(join(notesRepo, "hello.md"), "# Hello\n\nA searchable note with $E = mc^2$.\n\n$$\n\\int_0^1 x^2 \\, dx = \\frac{1}{3}\n$$");
@@ -51,6 +52,7 @@ test("health endpoint reports readiness", async () => {
   const response = await app.inject({ method: "GET", url: "/api/health" });
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), { status: "ok" });
+  assert.equal(response.headers["cache-control"], "no-store");
 });
 
 test("homepage stats count visits without inventing content data", async () => {
@@ -59,6 +61,7 @@ test("homepage stats count visits without inventing content data", async () => {
 
   const visit = await app.inject({ method: "POST", url: "/api/visits", payload: {} });
   assert.deepEqual(visit.json(), { visits: 1 });
+  assert.equal(visit.headers["cache-control"], "no-store");
 
   const updated = await app.inject({ method: "GET", url: "/api/stats" });
   assert.equal(updated.json().visits, 1);
@@ -115,6 +118,11 @@ test("admin can publish a note and public search can find it", async () => {
 
   const search = await app.inject({ method: "GET", url: "/api/search?q=searchable" });
   assert.equal(search.json().items[0].slug, "hello");
+  assert.match(search.headers["cache-control"] ?? "", /public, max-age=60/);
+  assert.match(search.headers.vary ?? "", /Cookie/);
+
+  const adminSearch = await app.inject({ method: "GET", url: "/api/search?q=searchable", headers: { cookie } });
+  assert.equal(adminSearch.headers["cache-control"], "no-store");
 
   const view = await app.inject({ method: "POST", url: "/api/views/hello", payload: {} });
   assert.equal(view.statusCode, 200);
@@ -123,6 +131,27 @@ test("admin can publish a note and public search can find it", async () => {
   const note = await app.inject({ method: "GET", url: "/api/notes/hello" });
   assert.equal(note.json().viewCount, 1);
   assert.ok(note.json().publishedAt);
+});
+
+// 验证同步写入的全文内容会进入索引，同时公开搜索仍过滤未发布文章。
+test("search index follows synchronization and preserves visibility", async () => {
+  writeFileSync(join(notesRepo, "private-roadmap.md"), "# Roadmap\n\nThe vectorized lighthouse pipeline has a unique index token.");
+  const sync = await app.inject({ method: "POST", url: "/api/admin/sync", headers: { cookie }, payload: {} });
+  assert.equal(sync.statusCode, 200);
+
+  const publicSearch = await app.inject({ method: "GET", url: "/api/search?q=vectorized" });
+  assert.deepEqual(publicSearch.json(), { items: [] });
+
+  const adminSearch = await app.inject({ method: "GET", url: "/api/search?q=lighthouse", headers: { cookie } });
+  assert.equal(adminSearch.json().items[0].slug, "private-roadmap");
+  assert.equal(adminSearch.headers["cache-control"], "no-store");
+});
+
+// 验证用户输入中的 FTS 保留字不会被当作查询语法而导致接口失败。
+test("search handles FTS operator words as ordinary input", async () => {
+  const response = await app.inject({ method: "GET", url: "/api/search?q=AND" });
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), { items: [] });
 });
 
 // 验证管理员可通过安全的 Markdown 源文件闭环完成创建、读取、编辑和删除。
@@ -211,7 +240,9 @@ test("service sync token can run synchronization without admin credentials", asy
     payload: {},
   });
   assert.equal(response.statusCode, 200);
-  assert.deepEqual(response.json(), { status: "ok", scanned: 1, changed: 0 });
+  assert.equal(response.json().status, "ok");
+  assert.equal(response.json().changed, 0);
+  assert.ok(response.json().scanned >= 1);
 });
 
 test("nested note slugs resolve through the wildcard route", async () => {

@@ -82,6 +82,16 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     }
   });
 
+  app.addHook("onSend", async (request, reply, payload) => {
+    const sessionSensitive = request.url.startsWith("/api/admin/")
+      || request.url.startsWith("/api/session")
+      || request.url.startsWith("/api/health");
+    if (request.method !== "GET" && request.method !== "HEAD" || sessionSensitive) {
+      reply.header("cache-control", "no-store");
+    }
+    return payload;
+  });
+
   await app.register(publicRoutes, { prefix: "/api" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
 

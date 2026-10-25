@@ -1,5 +1,30 @@
 {
-	"dependencies": {
+	"name": "xiayh-personal-site",
+	"description": "Xiayh's personal site development command surface",
+	"private": true,
+	"version": "0.1.0",
+	"packageManager": "pnpm@9.15.0",
+	"engines": {
+		"node": ">=22.13.0",
+		"pnpm": ">=9.15.0 <10"
+	},
+	"scripts": {
+		"dev": "pnpm run dev:web",
+		"dev:api": "pnpm --dir backend/fastify --ignore-workspace dev",
+		"dev:web": "pnpm --dir frontend dev",
+		"lint": "pnpm --dir frontend lint",
+		"typecheck": "pnpm run typecheck:api && pnpm run typecheck:web",
+		"typecheck:api": "pnpm --dir backend/fastify --ignore-workspace typecheck",
+		"typecheck:web": "pnpm --dir frontend typecheck",
+		"test": "pnpm run test:api && pnpm run test:web",
+		"test:api": "pnpm --dir backend/fastify --ignore-workspace test",
+		"test:web": "pnpm --dir frontend test",
+		"build": "pnpm run build:api && pnpm run build:web",
+		"build:api": "pnpm --dir backend/fastify --ignore-workspace build",
+		"build:web": "pnpm --dir frontend build",
+		"quality": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
+	},
+	"devDependencies": {
 		"typescript": "^7.0.2"
 	}
 }
