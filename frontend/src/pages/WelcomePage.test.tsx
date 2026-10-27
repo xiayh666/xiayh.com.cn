@@ -1,8 +1,15 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { fireEvent, render as renderUI, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import type { NoteSummary } from "../api";
 import { WelcomePage } from "./WelcomePage";
+
+function render(ui: ReactNode) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 30_000 } } });
+  return renderUI(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 const recentNote: NoteSummary = {
   id: 1, path: "math.md", slug: "math", title: "Math", summary: "", type: "markdown",

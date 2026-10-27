@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { Edit3, FileText } from "lucide-react";
+import { Edit3 } from "lucide-react";
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { LoadingDocument } from "./LoadingDocument";
+import { loadMarkdownEditor } from "./loadMarkdownEditor";
+import { loadMarkdownReader } from "./loadMarkdownReader";
 import { api } from "../api";
 import { useSetEditorStatus } from "../shell/EditorStatusContext";
 import { ArticleBreadcrumbs, type ArticleHeading } from "./ArticleBreadcrumbs";
 import { scrollArticleHeading } from "./articleNavigation";
 import styles from "./NotePage.module.css";
 
-const loadMarkdownReader = () => import("./MarkdownReader").then((module) => ({ default: module.MarkdownReader }));
 const MarkdownReader = lazy(loadMarkdownReader);
 export const preloadMarkdownReader = () => { void loadMarkdownReader(); };
 const ArticleEditor = lazy(() => import("./ArticleEditor").then((module) => ({ default: module.ArticleEditor })));
@@ -55,6 +57,8 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
   const [editing, setEditing] = useState(false);
 
   const note = noteQuery.data;
+
+  useEffect(() => { void loadMarkdownReader().catch(() => undefined); }, []);
   const summary = notesQuery.data?.items.find((item) => item.slug === slug);
   const pendingPath = summary?.path ?? `${slug}.md`;
 
@@ -187,6 +191,11 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
   );
 
   const canEdit = session.data?.authenticated;
+  const prepareEditor = () => {
+    void import("./ArticleEditor").catch(() => undefined);
+    void loadMarkdownEditor().catch(() => undefined);
+  };
+  const editButton = <button type="button" onPointerEnter={prepareEditor} onPointerDown={prepareEditor} onFocus={prepareEditor} onClick={() => { prepareEditor(); setEditing(true); }}><Edit3 /> Edit</button>;
 
   return (
     <article className={styles.page} aria-busy={!note}>
@@ -196,9 +205,9 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
         headings={headings}
         activeHeadingId={activeHeadingId}
         onSelectHeading={selectHeading}
-        actions={canEdit ? <button type="button" onClick={() => setEditing(true)}><Edit3 /> Edit</button> : null}
+        actions={canEdit ? editButton : null}
       />
-      {canEdit ? <div className={styles.mobileArticleActions}><button type="button" onClick={() => setEditing(true)}><Edit3 /> Edit</button></div> : null}
+      {canEdit ? <div className={styles.mobileArticleActions}>{editButton}</div> : null}
       <div
         ref={scrollerRef}
         className={styles.scroller}
@@ -219,20 +228,6 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
       </div>
     </article>
   );
-}
-
-function LoadingDocument({ pendingPath }: { pendingPath: string }) {
-  return <div className={styles.loadingDocument} role="status" aria-label="Loading article">
-    <span className={styles.loadingBar} />
-    <div className={styles.loadingFile}><FileText /><span>{pendingPath.split("/").at(-1)}</span></div>
-    <div className={styles.skeletonTitle} />
-    <div className={styles.skeletonLine} />
-    <div className={styles.skeletonLine} />
-    <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
-    <div className={styles.skeletonBlock} />
-    <div className={styles.skeletonLine} />
-    <div className={`${styles.skeletonLine} ${styles.skeletonMedium}`} />
-  </div>;
 }
 
 export { scrollArticleHeading } from "./articleNavigation";

@@ -7,6 +7,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes("vite/preload-helper") || id.includes("commonjsHelpers")) return "vendor-runtime";
           if (!id.includes("node_modules")) return undefined;
           const markdownPackage = id.match(/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(@(?:milkdown|codemirror|lezer)\/[^/]+)/)?.[1];
           if (markdownPackage === "@milkdown/kit") return undefined;

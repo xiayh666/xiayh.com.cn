@@ -2,7 +2,8 @@ import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from "lucide-
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api, type NoteSummary } from "../api";
+import { preloadArticle } from "../pages/lazyRoutes";
+import { type NoteSummary } from "../api";
 import styles from "./AppLayout.module.css";
 
 type FileNode = { kind: "file"; name: string; path: string; note: NoteSummary };
@@ -95,14 +96,13 @@ export function ExplorerTree({ notes, onOpenNote }: { notes: NoteSummary[]; onOp
         style={rowStyle}
         title={node.path}
         onClick={() => {
+          preloadArticle(queryClient, node.note.slug);
           if (onOpenNote) onOpenNote(href);
           else navigate(href);
         }}
-        onPointerEnter={() => void queryClient.prefetchQuery({
-          queryKey: ["note", node.note.slug],
-          queryFn: ({ signal }) => api.note(node.note.slug, signal),
-          staleTime: 30_000,
-        })}
+        onPointerEnter={(event) => { if (event.pointerType !== "touch") preloadArticle(queryClient, node.note.slug); }}
+        onPointerDown={() => preloadArticle(queryClient, node.note.slug)}
+        onFocus={() => preloadArticle(queryClient, node.note.slug)}
       >
         <span className={styles.treeIndent} />
         <FileText className={styles.accentIcon} />

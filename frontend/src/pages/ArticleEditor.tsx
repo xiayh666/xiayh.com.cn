@@ -3,9 +3,10 @@ import { ChevronDown, RefreshCw, Save, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, type NoteSummary } from "../api";
+import { loadMarkdownEditor } from "./loadMarkdownEditor";
 import styles from "./AdminPage.module.css";
 
-const loadMarkdownEditor = () => import("./MarkdownEditor").then((module) => ({ default: module.MarkdownEditor }));
+
 const MarkdownEditor = lazy(loadMarkdownEditor);
 export const preloadMarkdownEditor = () => { void loadMarkdownEditor(); };
 type Draft = { path: string; content: string; visibility: NoteSummary["visibility"]; published: boolean };

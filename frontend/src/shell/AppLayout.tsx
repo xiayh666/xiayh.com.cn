@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { LoadingDocument } from "../pages/LoadingDocument";
+import { BootReady } from "../bootLoader";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, Clock3, ShieldCheck, UserRound } from "lucide-react";
 import { api, type NoteSummary } from "../api";
 import { scrollArticleHeading } from "../pages/articleNavigation";
-import { LazyNotePage, LazyWelcomePage } from "../pages/lazyRoutes";
+import { LazyNotePage, LazyWelcomePage, preloadArticle } from "../pages/lazyRoutes";
 import { ActivityBar } from "./ActivityBar";
 import { CommandPalette } from "./CommandPalette";
 import { EditorArea } from "./EditorArea";
@@ -23,6 +25,7 @@ const welcomeTab: EditorTabModel = { id: "welcome", kind: "welcome", label: "Wel
 type SidebarView = "explorer" | "search" | "outline";
 
 export function AppLayout() {
+  const queryClient = useQueryClient();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
   const [activityBarVisible, setActivityBarVisible] = useState(true);
@@ -85,7 +88,9 @@ export function AppLayout() {
   };
 
   const openHomepageNote = (slug: string) => {
+    preloadArticle(queryClient, slug);
     setSidebarView("explorer");
+    if (window.matchMedia?.("(max-width: 820px)").matches) setSideBarVisible(false);
     transitionHomepageNote(slug);
   };
 
@@ -101,6 +106,7 @@ export function AppLayout() {
   };
 
   const openNoteFromSidebar = (href: string) => {
+    if (href.startsWith("/notes/")) preloadArticle(queryClient, decodeURIComponent(href.slice(7)));
     navigate(href);
     if (isMobileViewport()) setSideBarVisible(false);
   };
@@ -228,11 +234,12 @@ export function AppLayout() {
             "--intro-card-scale-y": introTarget.scaleY,
           } as CSSProperties : undefined}
         >
-          <Suspense fallback={<RouteLoading label="Loading workspace…" />}>
+          <Suspense fallback={null}>
             <LazyWelcomePage intro workspace={introPhase === "assembling" || (introPhase === "returning" && !homeReturnExpanded)} initialNotes={notes.data?.items ?? []} onBrowse={openExplorer} onHome={closeWorkspace} onOpenNote={openHomepageNote} />
+            <BootReady />
             {introArticleSlug ? (
               <div className={styles.introArticleBack} data-editor-flip-face="back">
-                <LazyNotePage slug={introArticleSlug} reportStatus={false} />
+                <Suspense fallback={<LoadingDocument pendingPath={introArticleSlug} />}><LazyNotePage slug={introArticleSlug} reportStatus={false} /></Suspense>
               </div>
             ) : null}
           </Suspense>
@@ -351,10 +358,6 @@ export function AppLayout() {
     </EditorStatusContext.Provider>
     </SystemNotificationProvider>
   );
-}
-
-function RouteLoading({ label }: { label: string }) {
-  return <div role="status" aria-live="polite">{label}</div>;
 }
 
 function beginSidebarResize(event: ReactPointerEvent<HTMLDivElement>, width: number, setWidth: (width: number) => void) {

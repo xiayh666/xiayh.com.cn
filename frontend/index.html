@@ -43,7 +43,7 @@
         font-family: var(--boot-font);
         opacity: 0;
         pointer-events: none;
-        transition: opacity 260ms ease, visibility 260ms ease;
+        transition: opacity 180ms ease, visibility 180ms ease;
         visibility: hidden;
       }
 
@@ -155,10 +155,10 @@
     <script>
       (() => {
         const state = {
-          fadeMs: 260,
-          minVisibleMs: 500,
+          fadeMs: 180,
+          minVisibleMs: 180,
           readyClass: "app-ready",
-          showDelayMs: 350,
+          showDelayMs: 120,
           shownAt: 0,
           visibleClass: "boot-loader-visible",
         };

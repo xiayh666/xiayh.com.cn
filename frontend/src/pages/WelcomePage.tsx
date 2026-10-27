@@ -1,3 +1,5 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { preloadArticle } from "./lazyRoutes";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Activity, BookOpen, FolderGit2, Github, Mail, MessageCircle, MessageSquareText, Music2, Pause, Terminal, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -162,6 +164,9 @@ type WelcomePageProps = {
 };
 
 export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, initialNotes = [] }: WelcomePageProps = {}) {
+  const queryClient = useQueryClient();
+  const notesQuery = useQuery({ queryKey: ["notes"], queryFn: api.notes, enabled: import.meta.env.MODE !== "test" });
+  const statsQuery = useQuery({ queryKey: ["stats"], queryFn: api.stats, enabled: import.meta.env.MODE !== "test" });
   const workspaceMode = workspace ?? !intro;
   const terminal = useTerminalTyping(intro && !workspaceMode);
   const clock = useClock();
@@ -169,8 +174,8 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   const navigate = useNavigate();
   const leaveTimerRef = useRef<number>();
   const [modelRotationEnabled, setModelRotationEnabled] = useState(!intro);
-  const [notes, setNotes] = useState<NoteSummary[]>(initialNotes);
-  const [stats, setStats] = useState<SiteStats>();
+  const notes = notesQuery.data?.items ?? initialNotes;
+  const stats = statsQuery.data;
   const [updatesPulse] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
@@ -190,10 +195,6 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
     const timer = window.setTimeout(() => setModelRotationEnabled(true), 2100);
     return () => window.clearTimeout(timer);
   }, [intro]);
-
-  useEffect(() => {
-    if (initialNotes.length) setNotes(initialNotes);
-  }, [initialNotes]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -314,6 +315,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   };
 
   const openNote = (slug: string) => {
+    preloadArticle(queryClient, slug);
     const action = () => {
       if (onOpenNote) onOpenNote(slug);
       else navigate(`/notes/${slug}`);
@@ -326,11 +328,6 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
     if (import.meta.env.MODE === "test") return;
     let cancelled = false;
     const loadHomepage = async () => {
-      const [notesResult, statsResult] = await Promise.allSettled([api.notes(), api.stats()]);
-      if (cancelled) return;
-      if (notesResult.status === "fulfilled") setNotes(notesResult.value.items);
-      if (statsResult.status === "fulfilled") setStats(statsResult.value);
-
       if (!intro) return;
       const visitKey = `site-visit:${new Date().toISOString().slice(0, 10)}`;
       try {
@@ -340,11 +337,11 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
         return;
       }
       const visit = await api.recordVisit().catch(() => undefined);
-      if (!cancelled && visit) setStats((value) => value ? { ...value, visits: visit.visits } : value);
+      if (!cancelled && visit) queryClient.setQueryData<SiteStats>(["stats"], (value) => value ? { ...value, visits: visit.visits } : value);
     };
     void loadHomepage();
     return () => { cancelled = true; };
-  }, [intro]);
+  }, [intro, queryClient]);
 
   const recentNotes = [...notes]
     .sort((left, right) => Date.parse(right.publishedAt || right.updatedAt) - Date.parse(left.publishedAt || left.updatedAt))
@@ -451,7 +448,7 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
             <header><span>近期更新</span></header>
             <div>
               {recentNotes.map((note, index) => (
-                <button key={note.id} type="button" onClick={() => openNote(note.slug)}>
+                <button key={note.id} type="button" onPointerEnter={(event) => { if (event.pointerType !== "touch") preloadArticle(queryClient, note.slug); }} onPointerDown={() => preloadArticle(queryClient, note.slug)} onFocus={() => preloadArticle(queryClient, note.slug)} onClick={() => openNote(note.slug)}>
                   <i>{String(index + 1).padStart(2, "0")}</i><strong>{note.title}</strong><time>{formatUpdateDate(note.publishedAt || note.updatedAt)}</time>
                 </button>
               ))}

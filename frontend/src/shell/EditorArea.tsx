@@ -1,3 +1,4 @@
+import { LoadingDocument } from "../pages/LoadingDocument";
 import { Suspense, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { LazyAdminPage, LazyNewArticlePage, LazyNotePage, LazyWelcomePage } from "../pages/lazyRoutes";
 import { EditorTabs, type EditorTabModel } from "./EditorTabs";
@@ -150,7 +151,7 @@ function EditorTabContent({ tab, reportStatus, onBrowse, onHome }: {
     const slug = decodeURIComponent(tab.href.replace(/^\/notes\//, ""));
     content = <LazyNotePage slug={slug} reportStatus={reportStatus} />;
   }
-  return <Suspense fallback={<div role="status">Loading editor…</div>}>{content}</Suspense>;
+  return <Suspense fallback={<LoadingDocument pendingPath={tab.detail ?? tab.label} />}>{content}</Suspense>;
 }
 
 function EditorContentPlane({ tab, reportStatus, onBrowse, onHome }: {
