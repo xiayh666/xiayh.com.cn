@@ -11,6 +11,8 @@ export default defineConfig({
           const markdownPackage = id.match(/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(@(?:milkdown|codemirror|lezer)\/[^/]+)/)?.[1];
           if (markdownPackage === "@milkdown/kit") return undefined;
           if (markdownPackage) return `markdown-${markdownPackage.replace(/[@/]/g, "-")}`;
+          const shikiAsset = id.match(/node_modules\/@shikijs\/(langs|themes)\/dist\/([^/]+)\.mjs$/);
+          if (shikiAsset && shikiAsset[2] !== "index") return `shiki-${shikiAsset[1]}-${shikiAsset[2]}`;
           if (id.includes("/shiki/")) return "markdown-shiki";
           if (id.includes("/katex/")) return "markdown-katex";
           if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/react-router-dom/")) return "vendor-react";

@@ -67,6 +67,16 @@ export function findNote(db: DatabaseSync, slug: string, isAdmin: boolean): Note
     FROM documents
     WHERE slug = ? AND ${visibilityClause(isAdmin)}
   `).get(slug) as unknown as DocumentRow | undefined;
+  // Older stored projections lost fenced-code language classes during sanitization.
+  // Repair them on read so existing articles do not require a manual resync.
+  if (row?.markdown && row.html?.includes("<pre><code>") && !/class="language-/.test(row.html)
+    && /^\s*(?:`{3,}|~{3,})[^\s`~]+/m.test(row.markdown)) {
+    const html = renderMarkdown(row.markdown);
+    if (html !== row.html) {
+      db.prepare("UPDATE documents SET html = ? WHERE slug = ?").run(html, slug);
+      row.html = html;
+    }
+  }
   return row ? mapNote(row) : undefined;
 }
 
@@ -168,6 +178,7 @@ export function renderMarkdown(content: string): string {
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
       img: ["src", "alt", "title"],
+      code: ["class"],
       span: ["data-katex-placeholder"],
     },
     allowedSchemes: ["http", "https", "mailto"],
@@ -208,7 +219,7 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
       if (path.startsWith(`..${sep}`) || path === "..") continue;
       activePaths.add(path);
       const content = readFileSync(absolutePath, "utf8");
-      const hash = createHash("sha256").update(`filename-title-katex-v2\0${content}`).digest("hex");
+      const hash = createHash("sha256").update(`filename-title-katex-code-v3\0${content}`).digest("hex");
       const old = previous.get(path) as { hash: string; markdown: string; wordCount: number } | undefined;
       if (old?.hash === hash && old.markdown === content && old.wordCount > 0) continue;
       const filename = basename(path, extname(path));

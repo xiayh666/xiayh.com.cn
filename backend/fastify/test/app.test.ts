@@ -6,6 +6,31 @@ import { tmpdir } from "node:os";
 import { mkdtempSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../src/app.js";
+import { openDatabase } from "../src/database.js";
+import { findNote, renderMarkdown } from "../src/services/notes.js";
+
+test("markdown preserves fenced code languages while removing unsafe attributes", () => {
+  const html = renderMarkdown('```typescript\nconst answer = 42;\n```\n\n<code class="language-js" onclick="alert(1)">safe</code>');
+  assert.match(html, /class="language-typescript"/);
+  assert.match(html, /class="language-js"/);
+  assert.doesNotMatch(html, /onclick/);
+});
+
+test("reading an old article repairs cached code languages without synchronization", () => {
+  const db = openDatabase(":memory:");
+  try {
+    const markdown = '# hello world\n\n```cpp\nstruct A {};\n```';
+    db.prepare(`INSERT INTO documents (path, slug, title, content_hash, markdown, html, updated_at, published, visibility)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'public')`).run("hello world.md", "hello-world", "hello world", "old-hash", markdown,
+      '<h1>hello world</h1><pre><code>struct A {};</code></pre>', "2026-10-27");
+    const note = findNote(db, "hello-world", false);
+    assert.match(note?.html ?? "", /class="language-cpp"/);
+    assert.match((db.prepare("SELECT html FROM documents").get() as { html: string }).html, /class="language-cpp"/);
+    assert.equal(findNote(db, "hello-world", false)?.html, note?.html);
+  } finally {
+    db.close();
+  }
+});
 
 let app: FastifyInstance;
 let cookie = "";

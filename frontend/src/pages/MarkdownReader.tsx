@@ -1,3 +1,4 @@
+import type { BundledLanguage } from "shiki";
 import { useEffect, useRef, type MouseEvent } from "react";
 import "katex/dist/katex.min.css";
 import styles from "./MarkdownReader.module.css";
@@ -15,6 +16,30 @@ export function MarkdownReader({ html, onReady }: MarkdownReaderProps) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+    let cancelled = false;
+    const codeBlocks = root.querySelectorAll<HTMLElement>("pre > code[class*=language-]");
+    if (codeBlocks.length) {
+      void import("shiki").then(async ({ bundledLanguages, bundledLanguagesAlias, codeToTokens }) => {
+        await Promise.all(Array.from(codeBlocks, async (code) => {
+          const language = Array.from(code.classList).find((name) => name.startsWith("language-"))?.slice(9);
+          if (!language || !(language in bundledLanguages || language in bundledLanguagesAlias)) return;
+          const source = code.textContent ?? "";
+          const { tokens } = await codeToTokens(source, { lang: language as BundledLanguage, theme: "catppuccin-latte" });
+          if (cancelled) return;
+          const fragment = document.createDocumentFragment();
+          tokens.forEach((line, index) => {
+            if (index) fragment.append("\n");
+            line.forEach((token) => {
+              const span = document.createElement("span");
+              span.textContent = token.content;
+              if (token.color) span.style.color = token.color;
+              fragment.append(span);
+            });
+          });
+          code.replaceChildren(fragment);
+        }));
+      }).catch(() => undefined);
+    }
     root.querySelectorAll<HTMLElement>("pre").forEach((block) => {
       if (block.querySelector("[data-code-copy]")) return;
       const button = document.createElement("button");
@@ -25,7 +50,10 @@ export function MarkdownReader({ html, onReady }: MarkdownReaderProps) {
       block.append(button);
     });
     const frame = requestAnimationFrame(() => readyRef.current?.());
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, [html]);
 
   const copyCode = (event: MouseEvent<HTMLDivElement>) => {
