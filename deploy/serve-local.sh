@@ -102,8 +102,26 @@ stop_api() {
   echo "API 已停止"
 }
 
+require_nginx() {
+  if command -v nginx >/dev/null 2>&1; then
+    return
+  fi
+  cat >&2 <<'EOF'
+未找到 nginx，无法启动站点。
+
+请先安装（任选其一）：
+  Debian/Ubuntu: sudo apt update && sudo apt install -y nginx
+  Fedora/RHEL:   sudo dnf install -y nginx
+  Arch:          sudo pacman -S nginx
+
+安装后重新执行 pnpm serve。
+EOF
+  exit 1
+}
+
 start_nginx() {
   local pid
+  require_nginx
   pid="$(nginx_pid)"
   if is_alive "$pid"; then
     echo "Nginx 已在运行 (pid $pid)"
@@ -137,6 +155,7 @@ stop_nginx() {
 }
 
 start_all() {
+  require_nginx
   start_api
   start_nginx
   echo
