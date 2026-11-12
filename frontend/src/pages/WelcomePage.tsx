@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { preloadArticle } from "./lazyRoutes";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Activity, BookOpen, FolderGit2, Github, Mail, MessageCircle, MessageSquareText, Music2, Pause, Terminal, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api, type NoteSummary, type SiteStats } from "../api";
@@ -185,6 +185,33 @@ export function WelcomePage({ intro = false, workspace, onBrowse, onOpenNote, in
   const openExternal = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
 
   useEffect(() => () => window.clearTimeout(leaveTimerRef.current), []);
+
+  // The in-app workspace is shorter than the viewport because of the title bar,
+  // editor tabs and status bar. Size mobile snap pages from the real container.
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+
+    const syncPageHeight = () => {
+      const styles = window.getComputedStyle(page);
+      const height = page.clientHeight
+        - (parseFloat(styles.paddingTop) || 0)
+        - (parseFloat(styles.paddingBottom) || 0);
+      if (height > 0) page.style.setProperty("--mobile-page-height", `${height}px`);
+    };
+
+    syncPageHeight();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(syncPageHeight) : undefined;
+    observer?.observe(page);
+    window.addEventListener("resize", syncPageHeight);
+    window.visualViewport?.addEventListener("resize", syncPageHeight);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", syncPageHeight);
+      window.visualViewport?.removeEventListener("resize", syncPageHeight);
+      page.style.removeProperty("--mobile-page-height");
+    };
+  }, []);
 
   useEffect(() => {
     if (!intro) {
