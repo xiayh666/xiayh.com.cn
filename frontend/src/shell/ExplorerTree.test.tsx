@@ -42,4 +42,14 @@ describe("ExplorerTree", () => {
     fireEvent.click(screen.getByRole("button", { name: /cpp/i }));
     expect(screen.queryByText("hello-world.md")).not.toBeInTheDocument();
   });
+
+  // 管理员可在目录上打开文件操作菜单；访客保留浏览器原生菜单。
+  it("offers folder actions only to the owner", () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><MemoryRouter><ExplorerTree notes={[note]} authenticated /></MemoryRouter></QueryClientProvider>);
+    fireEvent.contextMenu(screen.getByRole("button", { name: /cpp/i }));
+    expect(screen.getByRole("menuitem", { name: "New article here" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
 });

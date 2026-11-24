@@ -90,7 +90,7 @@ export function Sidebar({ sidebarView, authenticated, openTabsExpanded, setOpenT
         <nav className={`${styles.fileTree}${blogScrollReady ? ` ${styles.fileTreeScrollable}` : ""}`} aria-label="Article explorer">
           {notes.isLoading ? <div className={styles.treeMessage}>Loading…</div> : null}
           {notes.isError ? <div className={styles.treeMessage}>Unable to load notes</div> : null}
-          {notes.data ? <ExplorerTree notes={notes.data.items} onOpenNote={openNoteFromSidebar} /> : null}
+          {notes.data ? <ExplorerTree notes={notes.data.items} onOpenNote={openNoteFromSidebar} authenticated={authenticated} /> : null}
         </nav>
       </div>
       </>
