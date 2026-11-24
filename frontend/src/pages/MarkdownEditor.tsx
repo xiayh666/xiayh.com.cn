@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ClipboardE
 import styles from "./AdminPage.module.css";
 import { useCodeCopyFeedback } from "./CodeCopyFeedback";
 import { vscodeCodeTheme } from "./markdownCodeTheme";
+import { unescapeLoneProseDollars } from "./markdownDollar";
 
 type MarkdownEditorProps = {
   value: string;
@@ -17,6 +18,7 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
   const rootRef = useRef<HTMLDivElement>(null);
   const sourceRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollRatioRef = useRef(0);
   const changeRef = useRef(onChange);
   const uploadRef = useRef(onUploadImage);
   const startsInSourceMode = useMemo(() => window.matchMedia?.("(max-width: 760px)").matches ?? false, []);
@@ -28,6 +30,20 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
 
   changeRef.current = onChange;
   uploadRef.current = onUploadImage;
+
+  const changeMode = (nextMode: "visual" | "source") => {
+    if (nextMode === mode) return;
+    const current = mode === "source" ? sourceRef.current : rootRef.current;
+    if (current) {
+      const range = current.scrollHeight - current.clientHeight;
+      scrollRatioRef.current = range > 0 ? current.scrollTop / range : 0;
+    }
+    setMode(nextMode);
+  };
+
+  const restoreScroll = (element: HTMLElement | null) => {
+    if (element) element.scrollTop = scrollRatioRef.current * Math.max(0, element.scrollHeight - element.clientHeight);
+  };
 
   useEffect(() => {
     setEditorValue((current) => current === value ? current : value);
@@ -109,7 +125,7 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
     const images = [...(event.target.files ?? [])].filter((file) => file.type.startsWith("image/"));
     event.target.value = "";
     if (!images.length) return;
-    if (mode !== "source") setMode("source");
+    if (mode !== "source") changeMode("source");
     void uploadAndInsertImages(images);
   };
 
@@ -137,16 +153,22 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
     crepe.on((listener) => {
       listener.markdownUpdated((_ctx, markdown, previousMarkdown) => {
         if (markdown !== previousMarkdown) {
-          updateValue(markdown);
+          updateValue(unescapeLoneProseDollars(markdown));
         }
       });
     });
-    void crepe.create().catch((reason: unknown) => {
+    void crepe.create().then(() => {
+      requestAnimationFrame(() => restoreScroll(rootRef.current));
+    }).catch((reason: unknown) => {
       setError(reason instanceof Error ? reason.message : "The Markdown editor could not be initialized.");
     });
     return () => { void crepe.destroy(); };
   // Recreate the ProseMirror document only when switching editing modes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode === "source") requestAnimationFrame(() => restoreScroll(sourceRef.current));
   }, [mode]);
 
   return (
@@ -163,8 +185,8 @@ export function MarkdownEditor({ value, onChange, onUploadImage }: MarkdownEdito
         />
         <div role="group" aria-label="Markdown editing mode">
           <button type="button" onClick={() => fileInputRef.current?.click()}><ImagePlus /> Image</button>
-          <button type="button" className={mode === "visual" ? styles.markdownModeActive : ""} aria-pressed={mode === "visual"} onClick={() => setMode("visual")}><Eye /> Visual</button>
-          <button type="button" className={mode === "source" ? styles.markdownModeActive : ""} aria-pressed={mode === "source"} onClick={() => setMode("source")}><Code2 /> Source</button>
+          <button type="button" className={mode === "visual" ? styles.markdownModeActive : ""} aria-pressed={mode === "visual"} onClick={() => changeMode("visual")}><Eye /> Visual</button>
+          <button type="button" className={mode === "source" ? styles.markdownModeActive : ""} aria-pressed={mode === "source"} onClick={() => changeMode("source")}><Code2 /> Source</button>
         </div>
       </header>
       {mode === "visual" ? <div ref={rootRef} className={styles.markdownVisual} /> : (
