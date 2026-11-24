@@ -47,6 +47,23 @@ export function AppLayout() {
     enabled: sidebarView === "search" && searchText.trim().length > 0,
   });
   const session = useQuery({ queryKey: ["session"], queryFn: api.session, staleTime: 60_000 });
+  const syncStarted = useRef(false);
+  const notify = notifications.notify;
+  useEffect(() => {
+    if (!session.data?.authenticated) {
+      if (session.data) syncStarted.current = false;
+      return;
+    }
+    if (syncStarted.current) return;
+    syncStarted.current = true;
+    void api.sync().then(() => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["notes"] }),
+      queryClient.invalidateQueries({ queryKey: ["note"] }),
+      queryClient.invalidateQueries({ queryKey: ["stats"] }),
+    ])).catch((error: unknown) => {
+      notify({ title: "Sync failed", message: error instanceof Error ? error.message : "Could not synchronize the file tree." });
+    });
+  }, [session.data, queryClient, notify]);
   const location = useLocation();
   const navigate = useNavigate();
   const editorGroups = useEditorGroups(welcomeTab, navigate);
