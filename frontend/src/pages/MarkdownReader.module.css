@@ -15,6 +15,9 @@
 .reader :global(pre code) { display: block; padding: 0; background: transparent; font-size: 0.83rem; line-height: 1.65; white-space: pre; }
 .reader :global(pre button[data-code-copy]) { position: absolute; top: 0.55rem; right: 0.55rem; border: 1px solid hsl(var(--line)); padding: 0.28rem 0.45rem; background: hsl(var(--panel)); color: hsl(var(--muted)); font: 0.6rem "AudioLink Mono", monospace; cursor: pointer; }
 .reader :global(pre button[data-code-copy]:hover), .reader :global(pre button[data-code-copy]:focus-visible) { border-color: hsl(var(--accent)); color: hsl(var(--ink)); outline: none; }
+.reader :global(.katex-display) { margin: 1.2rem 0; overflow-x: auto; overflow-y: hidden; }
+.reader :global(.katex-display) > :global(.katex) { padding: 0.2rem 0; }
+.reader :global(.katex) { font-size: 1.05em; }
 .reader :global(img) { display: block; max-width: 100%; height: auto; margin: 1.35rem auto; }
 .reader :global(table) { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
 .reader :global(th), .reader :global(td) { border: 1px solid hsl(var(--line)); padding: 0.45rem 0.6rem; text-align: left; }

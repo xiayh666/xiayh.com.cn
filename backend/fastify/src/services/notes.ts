@@ -153,6 +153,7 @@ export function renderMarkdown(content: string): string {
   const mathFragments = new Map<string, string>();
   const markerPrefix = `katex-${randomUUID()}`;
   const katexExtension = markedKatex({
+    nonStandard: true,
     throwOnError: false,
     trust: false,
     strict: "ignore",
@@ -220,7 +221,7 @@ export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string
       if (path.startsWith(`..${sep}`) || path === "..") continue;
       activePaths.add(path);
       const content = readFileSync(absolutePath, "utf8");
-      const hash = createHash("sha256").update(`filename-title-katex-code-v3\0${content}`).digest("hex");
+      const hash = createHash("sha256").update(`filename-title-katex-code-v4\0${content}`).digest("hex");
       const old = previous.get(path) as { hash: string; markdown: string; wordCount: number } | undefined;
       if (old?.hash === hash && old.markdown === content && old.wordCount > 0) continue;
       const filename = basename(path, extname(path));
