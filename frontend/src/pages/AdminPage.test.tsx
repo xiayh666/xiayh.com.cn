@@ -70,6 +70,10 @@ describe("AdminPage", () => {
     await userEvent.type(screen.getByLabelText("Markdown content"), "# New article");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/admin/notes", expect.objectContaining({ method: "POST", body: JSON.stringify({ path: "cpp/new.md", content: "# New article", visibility: "private", published: false }) })));
+    await waitFor(() => expect(screen.getByPlaceholderText("section/article-name.md")).toBeDisabled());
+    await userEvent.type(screen.getByLabelText("Markdown content"), " updated");
+    await userEvent.keyboard("{Control>}s{/Control}");
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/admin/notes/9/content", expect.objectContaining({ method: "POST", body: JSON.stringify({ content: "# New article updated" }) })));
   });
 
   // 回归：已有文章第二次进入编辑时，source 可能从缓存/异步查询到达；编辑器不能先以空内容初始化后丢失正文。
@@ -81,5 +85,21 @@ describe("AdminPage", () => {
     }));
     renderWithProviders(<MemoryRouter><ArticleEditor note={note} onSaved={vi.fn()} /></MemoryRouter>);
     await waitFor(() => expect(screen.getByLabelText("Markdown content")).toHaveValue("# Existing article\n\nkeep me"));
+  });
+
+  // 未保存修改不能被取消操作直接丢弃。
+  it("asks before discarding an edited article", async () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (input: string) => input === "/api/admin/notes/7/source" ? response({ id: 7, path: note.path, content: "Original" }) : response({ ok: true })));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const cancel = vi.fn();
+    renderWithProviders(<MemoryRouter><ArticleEditor note={note} onSaved={vi.fn()} onCancel={cancel} /></MemoryRouter>);
+    const textarea = await screen.findByLabelText("Markdown content");
+    await userEvent.type(textarea, " edited");
+    expect(screen.getByText(/UNSAVED/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Cancel/ }));
+    expect(confirm).toHaveBeenCalled();
+    expect(cancel).not.toHaveBeenCalled();
+    confirm.mockRestore();
   });
 });

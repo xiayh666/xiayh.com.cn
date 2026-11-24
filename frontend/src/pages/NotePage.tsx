@@ -186,7 +186,7 @@ export function NotePage({ slug: slugOverride, reportStatus = true }: { slug?: s
 
   if (editing && note) return (
     <Suspense fallback={<LoadingDocument pendingPath={note.path} />}>
-      <ArticleEditor note={note} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />
+      <ArticleEditor note={note} onCancel={() => setEditing(false)} onSaved={() => undefined} />
     </Suspense>
   );
 
