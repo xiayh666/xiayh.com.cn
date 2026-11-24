@@ -192,6 +192,7 @@ export function renderMarkdown(content: string): string {
 
 export function syncNotes(db: DatabaseSync, notesRepo: string): { status: string; scanned: number; changed: number } {
   const root = resolve(notesRepo);
+  if (!existsSync(root)) throw new Error(`Notes repository does not exist: ${root}`);
   const files = markdownFiles(root);
   const activePaths = new Set<string>();
   let changed = 0;
